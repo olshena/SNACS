@@ -6,7 +6,7 @@
 ####################################################################
 
 ################################################
-create_heatmap=function(datObj,col_anno_var,col_dend=T,row_dend=T,hashColors=NULL,fileNameSuffix) {
+create_heatmap=function(datObj,col_anno_var,col_dend=T,row_dend=T,hashColors=NULL,fileNameSuffix,pvSnpThres=NA) {
     
     ################################################
     ## Parameters
@@ -15,10 +15,12 @@ create_heatmap=function(datObj,col_anno_var,col_dend=T,row_dend=T,hashColors=NUL
     row_anno_var=row_anno_name=NULL
     col_anno_name=NULL
 
-    pvSnpThres=NA
+    #pvSnpThres=NA
     sphericalK=NA
     cellClusterFileName=NA
     subsetSnpFlag=""
+
+    cat("heatmap : pvSnpThres ",pvSnpThres,"\n")
 
 
     ################################################

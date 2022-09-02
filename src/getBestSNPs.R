@@ -1,20 +1,20 @@
 ## Vanessa Kennedy single cell sequencing project
 
-## Heatmaps: Generated under ../heatmap folder
-
 ####################################################################
 ####################################################################
+getBestSNPs=function(datObj,col_anno_var,hashColors=NULL,clustMethod="hclust",pvSnpThres=0) {
 
-################################################
-rank_SNPs=function(datObj,col_anno_var,hashColors=NULL,clustMethod="hclust") {
-    
-    pvSnpThres=NA
+    # datObj=datObj1; col_anno_var=hashNames; hashColors=c("green3","indianred2","dodgerblue3"); pvSnpThres=pvSnpThres
+    ################################################
+
     sphericalK=NA
     cellClusterFileName=NA
     subsetSnpFlag=""
     subsetCellFlag="_allCells"
     
-    fileNameSuffix=paste0(ifelse(is.na(sphericalK),"","_skmean"),"_pvRanked_",exptName)
+    #cellClusterFileName=paste0("../heatmap/",subsetCellFlag,"/clustInfoCell",subsetCellFlag,"_pvRanked_",exptName,".txt")
+    
+    fileNameSuffix=paste0(ifelse(is.na(sphericalK),"","_skmean"),"_pvBest_",exptName)
     
     ################################################
     library(skmeans)
@@ -166,17 +166,16 @@ rank_SNPs=function(datObj,col_anno_var,hashColors=NULL,clustMethod="hclust") {
     datObj=list(mut=datThis,annSNP=annSNPthis,annCell=annCellThis)
     
     save(datObj,file=paste0(dirData,"datObj_for_heatmap",subsetCellFlag,fileNameSuffix,".RData"))
-    
+
     ###########################################################
     ###########################################################
-    cat("rank : pvSnpThres ",pvSnpThres,"\n")
+    cat("best : pvSnpThres ",pvSnpThres,"\n")
     create_heatmap(datObj,col_anno_var,col_dend=T,row_dend=F,hashColors=hashColors,fileNameSuffix,pvSnpThres=pvSnpThres)
     
     ###########################################################
     ###########################################################
 
     invisible(datObj)
-
 }
 
 

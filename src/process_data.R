@@ -6,7 +6,7 @@
 ####################################################################
 ####################################################################
 
-process_data=function(mutation,annSNP,annCell) {
+process_data=function(mut,annSNP,annCell) {
 
 #inputFile=paste0(mpalName,"_genotypes.csv"); cellAnnFile=paste0(mpalName,"_genotypes_raw.csv"); cellAnnVar=c("CD45.26","CD45.27","CD45.28"); snpAnnFile=paste0("variant_info_",mpalName,".csv"); depthFile=paste0("depth_",mpalName,".csv"); qualityFile=paste0("quality_",mpalName,".csv"); outputFileName=mpalName
 #mpalName="giltven1_run3"; inputFile=paste0(mpalName,".csv"); cellAnnFile=""; cellAnnVar=c("TS.1","TS.2"); snpAnnFile=""; depthFile=""; qualityFile=""; outputFileName=mpalName
@@ -25,10 +25,12 @@ process_data=function(mutation,annSNP,annCell) {
         stop("annCell has to be a data frame with at least two coulmns - id and cell_barcode")
     }
     
-    colnames(mutation)=annSNP$id
-    rownames(mutation)=annCell$id
+    colnames(mut)=annSNP$id
+    rownames(mut)=annCell$id
+    
+    mut=t(mut)
 
-    datObj=list(mutation=mutation,annSNP=annSNP,annCell=annCell)
+    datObj=list(mut=mut,annSNP=annSNP,annCell=annCell)
     
     invisible(datObj)
 }
@@ -47,9 +49,9 @@ impute_data=function(outputFileName="mpal3") {
     dirOutput="../output/"
     if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
 
-    numSNP=ncol(datObj$mutation); numCell=nrow(datObj$mutation)
+    numSNP=ncol(datObj$mut); numCell=nrow(datObj$mut)
     
-    propMissPerCell <- apply(datObj$mutation,1,function(x) sum(is.na(x)))/ncol(datObj$mutation)
+    propMissPerCell <- apply(datObj$mut,1,function(x) sum(is.na(x)))/ncol(datObj$mut)
     cat("\npropMissPerCell")
     print(summary(propMissPerCell))
     save(propMissPerCell,file=paste0(dirOutput,"propMissPerCell_",outputFileName,".RData"))
@@ -57,10 +59,10 @@ impute_data=function(outputFileName="mpal3") {
     hist(propMissPerCell,xlim=c(0,1),main=outputFileName,xlab="Proportion missing in a cell",ylab="Count",breaks=100)
     dev.off()
     i=1:nrow(annSNP); j=which(propMissPerCell<0.4)
-    datObj$mutation=datObj$mutation[j,i]; annSNP=datObj$annSNP[i,]; annCell=datObj$annCell[j,]
+    datObj$mut=datObj$mut[j,i]; annSNP=datObj$annSNP[i,]; annCell=datObj$annCell[j,]
     rm(propMissPerCell)
     
-    propMissPerSNP <- apply(datObj$mutation,2,function(x) sum(is.na(x)))/nrow(datObj$mutation)
+    propMissPerSNP <- apply(datObj$mut,2,function(x) sum(is.na(x)))/nrow(datObj$mut)
     cat("\npropMissPerSNP")
     print(summary(propMissPerSNP))
     save(propMissPerSNP,file=paste0(dirOutput,"propMissPerSNP_",outputFileName,".RData"))
@@ -68,7 +70,7 @@ impute_data=function(outputFileName="mpal3") {
     hist(propMissPerSNP,xlim=c(0,1),main=outputFileName,xlab="Proportion missing in a SNP",ylab="Count",breaks=100)
     dev.off()
     i=which(propMissPerSNP<0.4); j=1:nrow(annCell)
-    mmpalDat.int=datObj$mutation[j,i]; annSNP=annSNP[i,]; annCell=annCell[j,]
+    mmpalDat.int=datObj$mut[j,i]; annSNP=annSNP[i,]; annCell=annCell[j,]
     rm(propMissPerSNP)
     
     #propMutPerSNP <- apply(mmpalDat.int,2,sum,na.rm=TRUE)/nrow(mmpalDat.int)
@@ -120,7 +122,7 @@ impute_data=function(outputFileName="mpal3") {
     
     save(mmpalDat.int.filt.imp,annSNP,annCell,file=paste0(dirData,"m.int.filt.imp.",outputFileName,".RData"))
     
-    datObj=list(mutation=mmpalDat.int.filt.imp,annSNP=annSNP,annCell=annCell)
+    datObj=list(mut=mmpalDat.int.filt.imp,annSNP=annSNP,annCell=annCell)
     
     invisible(datObj)
     
