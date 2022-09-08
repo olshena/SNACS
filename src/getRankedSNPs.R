@@ -1,18 +1,14 @@
-getBestSNPs=function(snacsObj,col_anno_var,hashColors=NULL,clustMethod=c("hclust","skmean"),pvSnpThres=0) {
+getRankedSNPs=function(snacsObj,col_anno_var,clustMethod=c("hclust","skmean")) {
     
-    #snacsObj=snacsObj; col_anno_var=c(snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"); pvSnpThres=0.05
-
-    ################################################
-
     clustMethod=clustMethod[1]
+
+    pvSnpThres=NA
     cellClusterFileName=NA
     subsetSnpFlag=""
     #subsetCellFlag="_allCells"
     subsetCellFlag=""
-
-    #cellClusterFileName=paste0("../heatmap/",subsetCellFlag,"/clustInfoCell",subsetCellFlag,"_pvRanked_",snacsObj$exptName,".txt")
     
-    outputfileName=paste0("heatmap",ifelse(clustMethod=="skmean","_skmean",""),"_pvBest_",snacsObj$exptName)
+    outputfileName=paste0("heatmap",ifelse(clustMethod=="skmean","_skmean",""),"_pvRanked_",snacsObj$exptName)
     
     ################################################
     library(skmeans)
@@ -92,25 +88,16 @@ getBestSNPs=function(snacsObj,col_anno_var,hashColors=NULL,clustMethod=c("hclust
                     }
                 }
             }
-            annSNPthis$minPValue_2Vs1Cluster=apply(pvMat,1,min,na.rm=T)
+            annSNPthis$minPValue_1VsOtherClusters=apply(pvMat,1,min,na.rm=T)
             annSNPthis$maxLOR_1VsOtherClusters=apply(lorMat,1,max,na.rm=T)
             i=rev(order(annSNPthis$minPValue_1VsOtherClusters))
         } else {
-            if (F) {
-                dirResult="../output/"; if (!file.exists(dirResult)) dir.create(file.path(dirResult))
-                dirResult="../output/cellClusterPairPvalueHistogram/"; if (!file.exists(dirResult)) dir.create(file.path(dirResult))
-                png(paste0(dirResult,"histogram_cellClusterPair_withRankedSNPs_",snacsObj$exptName,".png"),width=480,height=480)
-                x=annSNPthis$minPValue_1VsOtherClusters
-                hist(x,freq=T,breaks=length(x)/100,main=paste0(snacsObj$exptName),xlab=paste0("1 cell cluster vs. other ",nrow(snacsObj$annHash)-1,": Minimum p-value"),ylab="Count",cex.main=2,cex.lab=1.5,cex.axis=1.5)
-                dev.off()
-            }
-
             i=which(annSNPthis$minPValue_1VsOtherClusters<=pvSnpThres)
             if (length(i)==0) {
-                cat("\n\nNo. of SNPs: ",nrow(annSNPthis),"\n",sep="")
+                cat("\n\n No. of SNPs :",nrow(annSNPthis),"\n",sep="")
                 cat("SNP p-values:\n")
-                print(signif(summary(annSNPthis$minPValue_1VsOtherClusters),2))
-                stop(paste0("No SNPs with p-value <= ",pvSnpThres))
+                print(summary(annSNPthis$minPValue_1VsOtherClusters))
+                stop(paste0("No SNPs with p-value <= ",pvSnpThres," !!!"))
             }
         }
         datThis=datThis[i,]
@@ -171,25 +158,24 @@ getBestSNPs=function(snacsObj,col_anno_var,hashColors=NULL,clustMethod=c("hclust
     annCellThis=annCellThis[j,]
 
     ################################################
-    #snacsObj[["bestSNPs"]]=annSNPthis$id
-    i=match(annSNPthis$id,snacsObj$annSNP$id)
-    snacsObj$mut=snacsObj$mut[i,]
-    snacsObj$annSNP=snacsObj$annSNP[i,]
-
-    ###########################################################
-    ###########################################################
-    if (F) {
-        i=match(snacsObj$bestSNPs,snacsObj$annSNP$id)
-        clustObj=createHeatmap(list(mut=snacsObj$mut[i,],annSNP=snacsObj$annSNP[i,],annCell=snacsObj$annCell),col_anno_var,col_dend=T,row_dend=F,outputfileName)
-    }
-    clustObj=createHeatmap(snacsObj,col_anno_var,col_dend=T,row_dend=F,outputfileName=outputfileName)
-    snacsObj[["hclustObj_bestSNPs"]]=clustObj$colClust
+    #datThis[datThis==0]=-1
+    #snacsObj=list(mut=datThis,annSNP=annSNPthis,annCell=annCellThis)
     
+    names(annCellThis)[match(paste0("cluster_",clustMethod),names(annCellThis))]=paste0("clustRankedSNPs_",clustMethod)
 
+    snacsObj[["mut"]]=datThis
+    snacsObj[["annSNP"]]=annSNPthis
+    snacsObj[["annCell"]]=annCellThis
+    
+    ###########################################################
+    ###########################################################
+    createHeatmap(snacsObj,col_anno_var,col_dend=T,row_dend=F,outputfileName=outputfileName)
+    
     ###########################################################
     ###########################################################
 
     invisible(snacsObj)
+
 }
 
 

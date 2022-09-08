@@ -1,3 +1,6 @@
+setwd("/Users/royr/UCSF/singleCell/Dab-seq/example")
+
+
 ####################################################################
 ####################################################################
 source("../src/heatmapRelated.R")
@@ -10,20 +13,16 @@ source("../src/createHeatmap.R")
 ####################################################################
 ## Parameters
 
-exptName="mpal3"
+verbose=T
 
+exptName="snacsExpt"
 hashNames=c("CD45.26","CD45.27","CD45.28")
 hashColors=c("green3","indianred2","dodgerblue3")
-pvSnpThres=0 ## P-value for selecting best SNPs
-
-verbose=T
+pvSnpThres=0.05 ## P-value for selecting best SNPs
 
 ####################################################################
 ## Load data
-
-dirData="../data/"
-load(paste0(dirData,"m.int.",exptName,".RData"))
-mutMat=t(mmpalDat.int)
+load("example.RData")
 
 ####################################################################
 ## Create SNACS object

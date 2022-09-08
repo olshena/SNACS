@@ -1,53 +1,31 @@
-## Vanessa Kennedy single cell sequencing project
-
-## Assign hashes to each cell based on CD45 measures & clustering
-## Generates outputs under ../result folder
-## Generates output files named "hashCall_XXX.txt"
-
-## Parameters: prob_ecdf & propAboveBackground
-## A cluster is assigned a hash if proportion of cells with ecdf probability >= "prob_ecdf" is >= "propAboveBackground"
-## Higher prob_ecdf or propAboveBackground means more conservative hash call
-
-## Parameters: probBackgndPeak & probBelowForeground
-## Optional. Check if hash signal is high across most cells by
-## first checking if the density peak is above "probBackgndPeak"
-## then look for background peak within the "probBelowForeground" quantile of the density, considering only the densities before the peak above
-## Higher probBackgndPeak means more conservative hash call
-## Higher probBelowForeground would consider a greater proportion of cells to find background peak
-
-## Parameters deprecated: clustAssignPValue, hashBackgndSDThres
-
-###########################################################
-###########################################################
-
-hashCall=function(datObj,exptName=exptName,hashNames=NULL,subsetCellFlag="_allCells",prob_ecdf=0.25,probBackgndPeak=0.5,probBelowForeground=0.75,propAboveBackground=0.5,minClustSize=100,clustComparePValue=10^-5,clustAssignPValue=10^-5,hashBackgndSDThres=2) {
+makeHashCall=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5,probBelowForeground=0.75,propAboveBackground=0.5,minClustSize=100,clustComparePValue=10^-5,clustAssignPValue=10^-5,hashBackgndSDThres=2) {
     
     ## -----------------------------------
-    if (length(hashBackgndSDThres)==1) hashBackgndSDThres=rep(hashBackgndSDThres,length(hashNames))
-    hashBackgndSDThres=hashBackgndSDThres[1:length(hashNames)]
-    names(hashBackgndSDThres)=hashNames
-    
-    ## -----------------------------------
-    dirResult="../result/"
-    if (!file.exists(dirResult)) dir.create(file.path(dirResult))
+    if (length(hashBackgndSDThres)==1) hashBackgndSDThres=rep(hashBackgndSDThres,nrow(snacsObj$annHash))
+    hashBackgndSDThres=hashBackgndSDThres[1:nrow(snacsObj$annHash)]
+    names(hashBackgndSDThres)=snacsObj$annHash$hashNames
 
     ## -----------------------------------
-    dirData=paste0("../heatmap/",subsetCellFlag,"/")
-    fName=paste0("_pvBest_ann_hashCall_mclustDallCall_",exptName)
-    fName=paste0(subsetCellFlag,"_pvBest_ann_hashCall_",exptName)
-    fName=paste0(subsetCellFlag,"_pvBest_ann_",exptName)
-    load(file=paste0(dirData,"clustObj",fName,".RData"))
-    clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
-    if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
-    clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
-    clustInfo=clustInfo[match(clustObj$colClust$labels,clustInfo$id),]
+    if (F) {
+        dirData=paste0("../heatmap/",subsetCellFlag,"/")
+        fName=paste0("_pvBest_ann_hashCall_mclustDallCall_",snacsObj$exptName)
+        fName=paste0(subsetCellFlag,"_pvBest_ann_hashCall_",snacsObj$exptName)
+        fName=paste0(subsetCellFlag,"_pvBest_ann_",snacsObj$exptName)
+        load(file=paste0(dirData,"clustObj",fName,".RData"))
+    }
+    #clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
+    clustInfo=snacsObj$annCell
+    #if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
+    #clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
+    clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
 
     ## --------------------------------------
-    nClust=length(hashNames)
+    nClust=nrow(snacsObj$annHash)
     nClustFilt=NA; clustFilt=NA; clustRename=NA
     ## --------------------------------------
 
-    clustInfo$clustId=clustInfo[,paste0("clustId_",length(hashNames))]
+    #clustInfo$clustId=clustInfo[,paste0("clustId_",nrow(snacsObj$annHash))]
+    clustInfo$clustId=cutree(snacsObj$hclustObj_bestSNPs,k=nrow(snacsObj$annHash))
     if (!is.na(nClustFilt[1])) {
         clustInfo$clustId_filt=NA
         for (k in 1:length(subClust_filt)) {
@@ -57,7 +35,7 @@ hashCall=function(datObj,exptName=exptName,hashNames=NULL,subsetCellFlag="_allCe
         clustInfo$clustId[which(clustInfo$clustId_filt%in%clustFilt)]=NA
     }
     
-    hashMat=as.matrix(clustInfo[,hashNames])
+    hashMat=as.matrix(clustInfo[,snacsObj$annHash$hashNames])
     if (F) {
         ## Normalize hash values
         for (k in 1:ncol(hashMat)) {
@@ -73,7 +51,7 @@ hashCall=function(datObj,exptName=exptName,hashNames=NULL,subsetCellFlag="_allCe
             hashMat[,k]=xAll
         }
     }
-    hashBackgnd=matrix(nrow=3,ncol=length(hashNames),dimnames=list(c("mean","sd","thres"),hashNames))
+    hashBackgnd=matrix(nrow=nrow(snacsObj$annHash),ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres"),snacsObj$annHash$hashNames))
     for (k in 1:ncol(hashMat)) {
         x=density(hashMat[,k],bw="SJ",na.rm=T)
         xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
@@ -113,9 +91,9 @@ hashCall=function(datObj,exptName=exptName,hashNames=NULL,subsetCellFlag="_allCe
     ###########################################################
     ## Identify doublets automatically
     
-    heightUniq=rev(unique(clustObj$colClust$height))
-    atHeight=heightUniq[length(hashNames)]
-    hashClustMain=cutree(clustObj$colClust,h=atHeight)
+    heightUniq=rev(unique(snacsObj$hclustObj_bestSNPs$height))
+    atHeight=heightUniq[nrow(snacsObj$annHash)]
+    hashClustMain=cutree(snacsObj$hclustObj_bestSNPs,h=atHeight)
 
     library(skmeans)
     getSKmeansDist=function(x) {as.dist(skmeans_xdist(x))}
@@ -126,12 +104,7 @@ hashCall=function(datObj,exptName=exptName,hashNames=NULL,subsetCellFlag="_allCe
     for (hashThis in unique(clustInfo$cd45Clust)) {
         #hashThis=c("CD45.27")
         #hashThis=c("TS.1")
-        if (F) {
-            j=which(datObj$phen$id%in%clustInfo$id[which(clustInfo$cd45Clust==hashThis)])
-            j=1:nrow(clustInfo)
-            clustObjThis=hclust(distfun(t(datObj$mut[,j])),method=linkMethod)
-        }
-        clustObjThis=clustObj$colClust
+        clustObjThis=snacsObj$hclustObj_bestSNPs
         #j=match(clustObjThis$label[clustObjThis$order],clustInfo$id)
         j=match(clustObjThis$label,clustInfo$id)
         clustInfoThis=clustInfo[j,]
@@ -203,7 +176,7 @@ hashCall=function(datObj,exptName=exptName,hashNames=NULL,subsetCellFlag="_allCe
             #cat("\n\n--------- ",k," ----------\n",sep="")
             j=cellId[which(x==k)]
             inHashes=c()
-            for (hashId in hashNames) {
+            for (hashId in snacsObj$annHash$hashNames) {
                 #if (mean(cd45MatThis[j,hashId]>(hashBackgnd["mean",hashId]+hashBackgndSDThres[hashId]*hashBackgnd["sd",hashId]))>0.5) {inHashes=c(inHashes,hashId)}
                 if (round(mean(cd45MatThis[j,hashId]>hashBackgnd["thres",hashId]),2)>=propAboveBackground) {inHashes=c(inHashes,hashId)}
             }
@@ -212,75 +185,89 @@ hashCall=function(datObj,exptName=exptName,hashNames=NULL,subsetCellFlag="_allCe
             } else if (length(inHashes)>2) {cd45Clust[j]="Multiplet"
             } else {cd45Clust[j]=""}
         }
-        table(x)
-        table(auto=cd45Clust[cellId],man=clustInfoThis$hashCall[cellId],exclude=NULL)
-        table(value,man=clustInfoThis$hashCall[cellId],exclude=NULL)
-        table(value,clusterOrig=clustInfoThis$cd45Clust[cellId],exclude=NULL)
-        table(value,auto=cd45Clust[cellId],exclude=NULL)
+        if (F) {
+            table(x)
+            table(auto=cd45Clust[cellId],man=clustInfoThis$hashCall[cellId],exclude=NULL)
+            table(value,man=clustInfoThis$hashCall[cellId],exclude=NULL)
+            table(value,clusterOrig=clustInfoThis$cd45Clust[cellId],exclude=NULL)
+            table(value,auto=cd45Clust[cellId],exclude=NULL)
+        }
     }
 
-    j=match(clustObj$colClust$label,clustInfo$id)
-    callInfo=clustInfo[j,which(!names(clustInfo)%in%colnames(hashMat))]
-    nm=names(callInfo)
-    callInfo=cbind(callInfo,hashMat[j,],hashCallAuto=cd45Clust,stringsAsFactors=F)
-    names(callInfo)=c(nm,colnames(hashMat),"hashCallAuto")
-    save(callInfo,file=paste0(dirResult,"hashCall_",exptName,".RData"))
+    if (F) {
+        j=match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id)
+        callInfo=clustInfo[j,which(!names(clustInfo)%in%colnames(hashMat))]
+        nm=names(callInfo)
+        callInfo=cbind(callInfo,hashMat[j,],hashCallAuto=cd45Clust,stringsAsFactors=F)
+        names(callInfo)=c(nm,colnames(hashMat),"hashCallAuto")
+        save(callInfo,file=paste0(dirResult,"hashCall_",snacsObj$exptName,".RData"))
+    }
 
     ###########################################################
     ###########################################################
     ## Generate hash call table
     
-    dirData="../data/"
-    load(paste0(dirData,"cell_barcode_",exptName,".RData"))
-    j=match(clustObj$colClust$label,clustInfo$id)
-    tbl=cbind(cell_barcode=clustInfo$cell_barcode[j],as.data.frame(hashMat[j,]),stringsAsFactors=F)
-    j=match(tbl$cell_barcode,cell_barcode)
-    callInfo=matrix(nrow=length(cell_barcode),ncol=ncol(hashMat)); colnames(callInfo)=colnames(hashMat)
-    for (k in colnames(callInfo)) callInfo[j,k]=tbl[,k]
-    callInfo=as.data.frame(callInfo,stringsAsFactors=F)
-    callInfo=cbind(cell_barcode,callInfo,hashCall="filtered",stringsAsFactors=F)
-    callInfo$hashCall[j]=cd45Clust
-    callInfo$hashCall=sub(".","-",callInfo$hashCall,fixed=T)
-    write.table(callInfo,paste0(dirResult,"hashCall_",exptName,".txt"), sep="\t", col.names=T, row.names=F, quote=F)
-    rm(tbl,cell_barcode)
+    if (F) {
+        dirData="../data/"
+        load(paste0(dirData,"cell_barcode_",snacsObj$exptName,".RData"))
+        j=match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id)
+        tbl=cbind(cell_barcode=clustInfo$cell_barcode[j],as.data.frame(hashMat[j,]),stringsAsFactors=F)
+        j=match(tbl$cell_barcode,cell_barcode)
+        callInfo=matrix(nrow=length(cell_barcode),ncol=ncol(hashMat)); colnames(callInfo)=colnames(hashMat)
+        for (k in colnames(callInfo)) callInfo[j,k]=tbl[,k]
+        callInfo=as.data.frame(callInfo,stringsAsFactors=F)
+        callInfo=cbind(cell_barcode,callInfo,hashCall="filtered",stringsAsFactors=F)
+        callInfo$hashCall[j]=cd45Clust
+        callInfo$hashCall=sub(".","-",callInfo$hashCall,fixed=T)
+        write.table(callInfo,paste0(dirResult,"hashCall_",snacsObj$exptName,".txt"), sep="\t", col.names=T, row.names=F, quote=F)
+        rm(tbl,cell_barcode)
+    }
 
     ###########################################################
     ###########################################################
     
-    print(table(hashCall=cd45Clust,cluster=clustInfo[match(clustObj$colClust$label,clustInfo$id),paste0("clustId_",nClust)],exclude=NULL))
+    print(table(hashCall=cd45Clust,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL))
+    
+    snacsObj$annCell$hashCall=""
+    j=match(snacsObj$hclustObj_bestSNPs$label,snacsObj$annCell$id); j1=which(!is.na(j)); j2=j[j1]
+    snacsObj$annCell$hashCall[j2]=cd45Clust[j1]
+    snacsObj$annCell$hashCall[snacsObj$hashCall==""]=NA
+
+    invisible(snacsObj)
 }
 
 
 ###########################################################
 ###########################################################
 
-hashDensityPlot=function(exptName="mpal1",hashNames=NULL,subsetCellFlag="_allCells",prob_ecdf=0.25,probBackgndPeak=0.5) {
+generateHashDensityPlot=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5) {
+    subsetCellFlag=""
     
-    #setwd("/Users/royr/UCSF/singleCell/Dab-seq/work")
-    #exptName="giltven1_run1"; hashNames=c("TS.1","TS.2"); subsetCellFlag="_allCells"; prob_ecdf=0.25
-    #exptName="mpal3"; hashNames=c("CD45.26","CD45.27","CD45.28"); subsetCellFlag="_allCells"; prob_ecdf=0.3
+    ## -----------------------------------
+    dirResult="../output/"; if (!file.exists(dirResult)) dir.create(file.path(dirResult))
+    dirResult="../output/hashDensityPlot/"; if (!file.exists(dirResult)) dir.create(file.path(dirResult))
 
     ## -----------------------------------
-    dirResult="../result/"
-    if (!file.exists(dirResult)) dir.create(file.path(dirResult))
-
-    ## -----------------------------------
-    dirData=paste0("../heatmap/",subsetCellFlag,"/")
-    fName=paste0("_pvBest_ann_hashCall_mclustDallCall_",exptName)
-    fName=paste0(subsetCellFlag,"_pvBest_ann_hashCall_",exptName)
-    fName=paste0(subsetCellFlag,"_pvBest_ann_",exptName)
-    load(file=paste0(dirData,"clustObj",fName,".RData"))
-    clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
-    if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
-    clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
-    clustInfo=clustInfo[match(clustObj$colClust$labels,clustInfo$id),]
+    if (F) {
+        dirData=paste0("../heatmap/",subsetCellFlag,"/")
+        fName=paste0("_pvBest_ann_hashCall_mclustDallCall_",snacsObj$exptName)
+        fName=paste0(subsetCellFlag,"_pvBest_ann_hashCall_",snacsObj$exptName)
+        fName=paste0(subsetCellFlag,"_pvBest_ann_",snacsObj$exptName)
+        load(file=paste0(dirData,"clustObj",fName,".RData"))
+    }
+    #clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
+    clustInfo=snacsObj$annCell
+    #if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
+    #clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
+    clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
 
     ## --------------------------------------
     ## For manual annotation of doublets
     nClustFilt=NA; clustFilt=NA; clustRename=NA
     ## --------------------------------------
 
-    clustInfo$clustId=clustInfo[,paste0("clustId_",length(hashNames))]
+    #clustInfo$clustId=clustInfo[,paste0("clustId_",nrow(snacsObj$annHash))]
+    clustInfo$clustId=cutree(snacsObj$hclustObj_bestSNPs,k=nrow(snacsObj$annHash))
     if (!is.na(nClustFilt[1])) {
         clustInfo$clustId_filt=NA
         for (k in 1:length(subClust_filt)) {
@@ -290,17 +277,17 @@ hashDensityPlot=function(exptName="mpal1",hashNames=NULL,subsetCellFlag="_allCel
         clustInfo$clustId[which(clustInfo$clustId_filt%in%clustFilt)]=NA
     }
     
-    hashMat=as.matrix(clustInfo[,hashNames])
-    hashBackgnd=matrix(nrow=2,ncol=length(hashNames),dimnames=list(c("mean","sd"),hashNames))
+    hashMat=as.matrix(clustInfo[,snacsObj$annHash$hashNames])
+    hashBackgnd=matrix(nrow=2,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd"),snacsObj$annHash$hashNames))
     ylimHist=rep(NA,ncol(hashMat))
     for (k in 1:ncol(hashMat)) {
         y=hist(hashMat[,k],breaks=diff(range(hashMat[,k]))/.1,plot=F)
         ylimHist[k]=max(y$counts)
     }
     ylimHist=c(0,max(ylimHist))
-    png(paste0(dirResult,"densityPlot_hash",subsetCellFlag,"_",exptName,"_%1d.png"),width=5*240,height=3*240)
-    par(mfcol=c(3,3))
     for (k in 1:ncol(hashMat)) {
+        png(paste0(dirResult,"densityPlot_hash",subsetCellFlag,"_",snacsObj$annHash$hashNames[k],"_",snacsObj$exptName,".png"),width=5*240,height=3*240)
+        par(mfcol=c(3,1))
         x=density(hashMat[,k],bw="SJ",na.rm=T)
         xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
         xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
@@ -332,15 +319,15 @@ hashDensityPlot=function(exptName="mpal1",hashNames=NULL,subsetCellFlag="_allCel
             vertLine=c(median(xx),quantile(xx,probs=prob_ecdf)); vertLineLab=c("med",prob_ecdf)
         }
         vertLine=c(median(x2),quantile(x2,probs=prob_ecdf)); vertLineLab=c("med",prob_ecdf)
-        plot(x,xlim=xlim,ylim=ylim,main=paste0(exptName,": ",colnames(hashMat)[k]),xlab="Hash",cex.main=2,cex.lab=1.5,cex.axis=1.5)
+        plot(x,xlim=xlim,ylim=ylim,main=paste0(snacsObj$exptName,": ",colnames(hashMat)[k]),xlab="Hash",cex.main=2,cex.lab=1.5,cex.axis=1.5)
         lines(density(x2,bw="SJ"),col="red"); abline(v=vertLine,col="green")
         plot(density(x2,bw="SJ"),xlim=xlim,ylim=ylim,main="",xlab="Hash background",col="red",cex.main=2,cex.lab=1.5,cex.axis=1.5); abline(v=vertLine,col="green")
         axis(side=3,at=vertLine,labels=vertLineLab,cex.axis=1.5,las=3,col="green")
         hashBackgnd[,k]=c(mean(x2),sd(x2))
         x=hashMat[,k]
-        hist(x,freq=T,breaks=diff(range(x))/.1,xlim=xlim,ylim=ylimHist,main=paste0(exptName,": ",colnames(hashMat)[k]),xlab="Hash",ylab="Count",cex.main=2,cex.lab=1.5,cex.axis=1.5)
+        hist(x,freq=T,breaks=diff(range(x))/.1,xlim=xlim,ylim=ylimHist,main=paste0(snacsObj$exptName,": ",colnames(hashMat)[k]),xlab="Hash",ylab="Count",cex.main=2,cex.lab=1.5,cex.axis=1.5)
+        dev.off()
     }
-    dev.off()
 }
 
 
