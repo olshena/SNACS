@@ -43,8 +43,11 @@ createSNACSobject=function(mut,annSNP,annCell,exptName,hashNames,hashColors=NULL
 ####################################################################
 
 imputeMissingMutations=function(snacsObj,verbose=F) {
-    library(VIM)
+    timeStamp=Sys.time()
+    #print(format(timeStamp, "%x %X"))
     
+    library(VIM)
+
     if (verbose) cat("\n\nImputing ",snacsObj$exptName," ...\n",sep="")
     dirData="../data/"
     #load(paste0(dirData,"m.int.",exptName,".RData"))
@@ -112,11 +115,12 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
     if (T) {
         x=matrix(nrow=nrow(datThis),ncol=ncol(datThis),dimnames=list(rownames(datThis),colnames(datThis)))
         x[datThis==0]="F"; x[datThis==1]="T"
-        rowNames=rownames(x)
+        cellNames=colnames(x)
         rm(datThis)
+        x=t(x)
         x=kNN(x,k=5,imp_var=F)
-        x=as.matrix(x)
-        datThis=matrix(nrow=nrow(x),ncol=ncol(x),dimnames=list(rowNames,colnames(x)))
+        x=as.matrix(x); x=t(x)
+        datThis=matrix(nrow=nrow(x),ncol=ncol(x),dimnames=list(rownames(x),cellNames))
         datThis[x=="F"]=0
         datThis[x=="T"]=1
         rm(x)
@@ -130,8 +134,12 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
     snacsObj[["annCell"]]=annCellThis
     snacsObj[["missing"]]=missMat
 
-    if (verbose) cat("\n\nImputation done\n",sep="")
-
+    if (verbose) cat("\nImputation done\n\n",sep="")
+    
+    timeStamp=c(timeStamp,Sys.time())
+    #print(format(timeStamp[2], "%x %X"))
+    print(diff(timeStamp))
+    
     invisible(snacsObj)
     
 }

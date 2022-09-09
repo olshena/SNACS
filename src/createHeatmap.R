@@ -167,13 +167,13 @@ createHeatmap=function(snacsObj,col_anno_var,col_anno_name=NULL,col_dend=T,row_d
         "png"={png(paste(dirH,fName,"_%1d.png",sep=""),width=480*2,height=480*2)},
         "pdf"={pdf(paste(dirH,fName,".pdf",sep=""),width=7,height=7)}
     )
-    timeStamp=Sys.time()
-    #print(format(timeStamp, "%x %X"))
+    #timeStamp=Sys.time()
+    ##print(format(timeStamp, "%x %X"))
     
     clustObj=generate_heatmap(x=snacsObj$mut,distfun=distfun,methodR=linkMethod,methodC=linkMethod,row_anno=hasRowAnno,col_info=snacsObj$annCell,row_info=snacsObj$annSNP,col_dend=col_dend,row_dend=row_dend,col_lab=F,row_lab=F,zlm=limHM,ncc=ncc,ncr=ncr,heatmap_color=heatmap_color,col_anno_var=col_anno_var,col_anno_name=col_anno_name,col_var_info=col_var_info,row_anno_var=row_anno_var,row_anno_name=row_anno_name,row_var_info=row_var_info,densColor=NULL,plot_info=plotInfo,input_legend=showLegend)
-    timeStamp=c(timeStamp,Sys.time())
-    #print(format(timeStamp[2], "%x %X"))
-    print(diff(timeStamp))
+    #timeStamp=c(timeStamp,Sys.time())
+    ##print(format(timeStamp[2], "%x %X"))
+    #print(diff(timeStamp))
     dev.off()
     #save(clustObj,file=paste0(dirH,"clustObj",fName,".RData"))
     if (F) {
