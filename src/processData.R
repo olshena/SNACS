@@ -1,24 +1,34 @@
 ####################################################################
 ####################################################################
 
-createSNACSobject=function(mut,annSNP,annCell,exptName,hashNames,hashColors=NULL) {
+SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,hashColors=NULL) {
     if (is.null(hashColors)) hashColors=rainbow(n=length(hashNames))
     
     if (!is.matrix(mut)) stop("mut has to be a matrix of 0s and 1s")
     if (!any(mut%in%c(0,1))) stop("mut has to be a matrix of 0s and 1s")
-    if (nrow(mut)!=nrow(annSNP)) stop("Number of rows in mut and annSNP do not match")
-    if (ncol(mut)!=nrow(annCell)) stop("Number of columns in mut and number of rows in annCell do not match")
-    if (any(!hashNames%in%names(annCell))) stop("Hash names not found in annCell")
-    if (length(hashColors)<length(hashNames)) stop("Number of hash colors should be the same as the number of hashes")
-    if ("id"%in%names(annSNP)) warning("Replacing column id in annSNP with generated SNP IDs")
-    if ("id"%in%names(annCell)) warning("Replacing column id in annCell with generated cell IDs")
+    if (ncol(mut)!=ncol(hashes)) stop("hashes has to be matrix with each row represeting a hash and eah column a cells")
+    #if ("id"%in%names(annSNP)) warning("Replacing column id in annSNP with generated SNP IDs")
+    #if ("id"%in%names(annCell)) warning("Replacing column id in annCell with generated cell IDs")
     
+    hashNames=rownames(hashes)
+    if (length(hashColors)<length(hashNames)) stop("Number of hash colors should be the same as the number of hashes")
+    if ("cyan2"%in%hashColors) stop("Cyan is reserved for doublets. Please choose a different hash color")
+    if (is.null(annCell)) {
+        annCell=data.frame(id=paste0("cell",1:ncol(mut)))
+    } else {
+        if (ncol(mut)!=nrow(annCell)) stop("Number of columns in mut and number of rows in annCell do not match")
+    }
+    if (is.null(annSNP)) {
+        annSNP=data.frame(id=paste0("snp",1:nrow(mut)))
+    } else {
+        if (nrow(mut)!=nrow(annSNP)) stop("Number of rows in mut and annSNP do not match")
+    }
+    colnames(mut)=colnames(hashes)=annCell$id=paste0("cell",1:ncol(mut))
     rownames(mut)=annSNP$id=paste0("snp",1:nrow(mut))
-    colnames(mut)=annCell$id=paste0("cell",1:ncol(mut))
-    if (ncol(annSNP)==1) annSNP$desc=annSNP$id
     if (ncol(annCell)==1) annCell$desc=annCell$id
-    for (k in 1:ncol(annSNP)) if (is.factor(annSNP[,k])) annSNP[,k]=as.character(annSNP[,k])
+    if (ncol(annSNP)==1) annSNP$desc=annSNP$id
     for (k in 1:ncol(annCell)) if (is.factor(annCell[,k])) annCell[,k]=as.character(annCell[,k])
+    for (k in 1:ncol(annSNP)) if (is.factor(annSNP[,k])) annSNP[,k]=as.character(annSNP[,k])
 
     hashColors=hashColors[1:length(hashNames)]
 
@@ -26,17 +36,32 @@ createSNACSobject=function(mut,annSNP,annCell,exptName,hashNames,hashColors=NULL
     dirData="../data/"
     if (!file.exists(dirData)) dir.create(file.path(dirData))
 
-    if (!all(c("id","description")%in%names(annSNP))) {
-        stop("annSNP has to be a data frame with at least two coulmns - id and description")
+    if (!all(c("id","desc")%in%names(annSNP))) {
+        stop("annSNP has to be a data frame with at least two columns - id and description")
     }
 
-    if (!all(c("id","cell_barcode")%in%names(annCell))) {
-        stop("annCell has to be a data frame with at least two coulmns - id and cell_barcode")
+    if (!all(c("id","desc")%in%names(annCell))) {
+        stop("annCell has to be a data frame with at least two columns - id and desc")
     }
 
-    snacsObj=list(mut=mut,annSNP=annSNP,annCell=annCell,exptName=exptName,annHash=data.frame(hashNames=hashNames,hashColors=hashColors,stringsAsFactors=F))
+    snacsObj=list(mut=mut,hashes=hashes,exptName=exptName,annHash=data.frame(hashNames=hashNames,hashColors=hashColors,stringsAsFactors=F),annCell=annCell,annSNP=annSNP)
     
+    #snacsObj=new("SNACSList",snacsObj)
+    attr(snacsObj,"class")="SNACSList"
+
     invisible(snacsObj)
+}
+
+####################################################################
+####################################################################
+
+print.SNACSList <- function(snacsObj) {
+    cat('An object of class "SNACSList"\n',sep="")
+    cat("Experiment name: ",snacsObj$exptName, "\n",sep="")
+    cat("No. of SNPs: ",nrow(snacsObj$mut),"\n",sep="")
+    cat("No. of cells: ",ncol(snacsObj$mut),"\n",sep="")
+    cat("Hashes: ",paste(snacsObj$annHash$hashNames,collapse=", "),"\n",sep="")
+    cat('All output files are saved in "../output" folder\n',sep="")
 }
 
 ####################################################################
@@ -74,7 +99,7 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
         }
     }
     i=1:nrow(snacsObj$mut); j=which(propMissPerCell<0.4)
-    datThis=snacsObj$mut[i,j]; annSNPthis=snacsObj$annSNP[i,]; annCellThis=snacsObj$annCell[j,]
+    datThis=snacsObj$mut[i,j]; hashesThis=snacsObj$hashes[,j]; annCellThis=snacsObj$annCell[j,]; annSNPthis=snacsObj$annSNP[i,]
     rm(propMissPerCell)
     
     propMissPerSNP <- apply(datThis,1,function(x) sum(is.na(x)))/ncol(datThis)
@@ -89,7 +114,7 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
         }
     }
     i=which(propMissPerSNP<0.4); j=1:nrow(annCellThis)
-    datThis=datThis[i,j]; annSNPthis=annSNPthis[i,]; annCellThis=annCellThis[j,]
+    datThis=datThis[i,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]; annSNPthis=annSNPthis[i,]
     rm(propMissPerSNP)
     
     #propMutPerSNP <- apply(datThis,1,sum,na.rm=TRUE)/ncol(datThis)
@@ -101,7 +126,7 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
         }
     }
     i=which(propMutPerSNP>=0.1 & propMutPerSNP<=0.8); j=1:nrow(annCellThis)
-    datThis=datThis[i,j]; annSNPthis=annSNPthis[i,]; annCellThis=annCellThis[j,]
+    datThis=datThis[i,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]; annSNPthis=annSNPthis[i,]
     rm(propMutPerSNP)
     
     if (verbose) {
@@ -125,20 +150,20 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
         datThis[x=="T"]=1
         rm(x)
     }
-    
-    #save(datThis,annSNPthis,annCellThis,file=paste0(dirData,"m.int.filt.imp.",snacsObj$exptName,".RData"))
-    
-    #snacsObj=list(mut=datThis,annSNP=annSNPthis,annCell=annCellThis,missing=missMat)
+
     snacsObj[["mut"]]=datThis
-    snacsObj[["annSNP"]]=annSNPthis
+    snacsObj[["hashes"]]=hashesThis
     snacsObj[["annCell"]]=annCellThis
+    snacsObj[["annSNP"]]=annSNPthis
     snacsObj[["missing"]]=missMat
 
-    if (verbose) cat("\nImputation done\n\n",sep="")
-    
-    timeStamp=c(timeStamp,Sys.time())
-    #print(format(timeStamp[2], "%x %X"))
-    print(diff(timeStamp))
+    if (verbose) {
+        cat("\nImputation done\n\n",sep="")
+        
+        timeStamp=c(timeStamp,Sys.time())
+        #print(format(timeStamp[2], "%x %X"))
+        print(diff(timeStamp))
+    }
     
     invisible(snacsObj)
     

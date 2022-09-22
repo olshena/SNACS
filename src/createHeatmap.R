@@ -1,20 +1,19 @@
-createHeatmap=function(snacsObj,col_anno_var,col_anno_name=NULL,col_dend=T,row_dend=T,outputfileName="heatmap") {
+createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row_dend=T,outputfileName="heatmap",outFormat=c("pdf","png","")) {
     
     ################################################
     ## Parameters
 
+    outFormat=outFormat[1]
+    
     subsetCellFlag="_allCells"
     subsetCellFlag=""
-    row_anno_var=row_anno_name=NULL
+    snp_anno_var=snp_anno_name=NULL
 
     cellClusterFileName=NA
     subsetSnpFlag=""
 
     ################################################
     ## Parameters - optional
-
-    outFormat="png"
-    outFormat="pdf"
 
     ## Whether to generate sample & heatmap color legends
     showLegend=T
@@ -41,14 +40,16 @@ createHeatmap=function(snacsObj,col_anno_var,col_anno_name=NULL,col_dend=T,row_d
     ################################################
     ## Generate heatmap of known hashes first and then all hashes
     
-    if (is.null(row_anno_var)) hasRowAnno=F else hasRowAnno=T
-    if (is.null(col_anno_name)) col_anno_name=col_anno_var
-    if (is.null(row_anno_name)) row_anno_name=row_anno_var
-    col_anno_name=paste0(col_anno_name," ") ## Cell color bar names
-    row_anno_name=paste0(row_anno_name," ") ## SNP color bar names
-    k=match(c("SnpEff_Annotation_Impact","meanQuality","meanDepth"),row_anno_var); k1=which(!is.na(k)); k2=k[k1]
-    if (length(k1)!=0) row_anno_name[k2]=paste0(c("Impact","Quality","Depth")[k1]," ")
+    if (is.null(snp_anno_var)) hasRowAnno=F else hasRowAnno=T
+    if (is.null(cell_anno_name)) cell_anno_name=cell_anno_var
+    if (is.null(snp_anno_name)) snp_anno_name=snp_anno_var
+    cell_anno_name=paste0(cell_anno_name," ") ## Cell color bar names
+    snp_anno_name=paste0(snp_anno_name," ") ## SNP color bar names
+    k=match(c("SnpEff_Annotation_Impact","meanQuality","meanDepth"),snp_anno_var); k1=which(!is.na(k)); k2=k[k1]
+    if (length(k1)!=0) snp_anno_name[k2]=paste0(c("Impact","Quality","Depth")[k1]," ")
 
+    snacsObj$annCell=cbind(snacsObj$annCell[,which(!names(snacsObj$annCell)%in%rownames(snacsObj$hashes))],t(snacsObj$hashes),stringsAsFactors=F)
+    
     #fName=paste0(subsetCellFlag,subsetSnpFlag,outputfileName)
     fName=outputfileName
 
@@ -66,28 +67,30 @@ createHeatmap=function(snacsObj,col_anno_var,col_anno_name=NULL,col_dend=T,row_d
     #plotInfo=list(margins=c(.2,.2),cexRow=0.2,cexCol=0.2,cexRow=2,cexColSide=1.2,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
     #plotInfo=list(margins=c(5,.2),cexRow=0.2,cexCol=0.2,cexRow=2,cexRowSide=1,cexColSide=1.2,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
     plotInfo=list(margins=c(5,.2),cexRow=0.2,cexCol=0.2,cexRow=2,cexRowSide=1,cexColSide=.7,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
-    col_var_info=list(hash=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
-                            level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
-                        hashKnown=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
-                            level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
-                        hashUnknown=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
-                            level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
-                        hashCall=list(color=c("green3","indianred2","dodgerblue3","cyan2","darkgreen","black","white"),
-                            level=c("CD45-26","CD45-27","CD45-28","Doublet","Multiplet","nosignal","")),
-                        hashCallMan=list(color=c("green3","indianred2","dodgerblue3","cyan2","darkgreen","black","white"),
-                            level=c("CD45-26","CD45-27","CD45-28","Doublet","Multiplet","nosignal","")),
-                        mclustDallCall=list(color=c("green3","indianred2","dodgerblue3","cyan2","magenta3","yellow2","black"),
-                            level=c("MixModel-26","MixModel-27","MixModel-28","MixModel-26-27","MixModel-27-28","MixModel-26-28","MixModel-nocall")),
-                        CD45.26=list(limit=c(-4,4)),CD45.27=list(limit=c(-4,4)),CD45.28=list(limit=c(-4,4)),
-                        cluster_hclust=list(color=c("pink","magenta","purple"),level=paste0("cluster",1:3)),
-                        cluster_skmean=list(color=c("pink","magenta","purple"),level=1:3),
-                        cluster_skmean2=list(color=c("pink","magenta","purple"),level=1:3),
-                        cluster_skmean_skmeanSkmean=list(color=c("pink","magenta","purple"),level=1:3),
-                        cluster_skmean2_skmeanSkmean=list(color=c("pink","magenta","purple"),level=1:3),
-                        cluster_skmean2_hclustSkmean=list(color=c("pink","magenta","purple"),level=1:3),
-                        meanDepth=list(limit=c(20,80)),meanQuality=list(limit=c(25,95)))
+    if (F) {
+        col_var_info=list(hash=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
+                                level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
+                            hashKnown=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
+                                level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
+                            hashUnknown=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
+                                level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
+                            hashCall=list(color=c("green3","indianred2","dodgerblue3","cyan2","darkgreen","black","white"),
+                                level=c("CD45-26","CD45-27","CD45-28","Doublet","Multiplet","nosignal","")),
+                            hashCallMan=list(color=c("green3","indianred2","dodgerblue3","cyan2","darkgreen","black","white"),
+                                level=c("CD45-26","CD45-27","CD45-28","Doublet","Multiplet","nosignal","")),
+                            mclustDallCall=list(color=c("green3","indianred2","dodgerblue3","cyan2","magenta3","yellow2","black"),
+                                level=c("MixModel-26","MixModel-27","MixModel-28","MixModel-26-27","MixModel-27-28","MixModel-26-28","MixModel-nocall")),
+                            CD45.26=list(limit=c(-4,4)),CD45.27=list(limit=c(-4,4)),CD45.28=list(limit=c(-4,4)),
+                            cluster_hclust=list(color=c("pink","magenta","purple"),level=paste0("cluster",1:3)),
+                            cluster_skmean=list(color=c("pink","magenta","purple"),level=1:3),
+                            cluster_skmean2=list(color=c("pink","magenta","purple"),level=1:3),
+                            cluster_skmean_skmeanSkmean=list(color=c("pink","magenta","purple"),level=1:3),
+                            cluster_skmean2_skmeanSkmean=list(color=c("pink","magenta","purple"),level=1:3),
+                            cluster_skmean2_hclustSkmean=list(color=c("pink","magenta","purple"),level=1:3),
+                            meanDepth=list(limit=c(20,80)),meanQuality=list(limit=c(25,95)))
+    }
     col_var_info=list()
-    col_var_info[["hashCall"]]=list(color=snacsObj$annHash$hashColors,level=snacsObj$annHash$hashNames)
+    col_var_info[["hashCall"]]=list(color=c(snacsObj$annHash$hashColors,"cyan2"),level=c(snacsObj$annHash$hashNames,"Doublet"))
     row_var_info=list(SnpEff_Annotation_Impact=list(color=c("brown","yellow","orange","red","white"),
                             level=c("HIGH","LOW","MODERATE","MODIFIER","")),
                             meanDepth=list(limit=c(20,80)),meanQuality=list(limit=c(25,95)))
@@ -170,11 +173,11 @@ createHeatmap=function(snacsObj,col_anno_var,col_anno_name=NULL,col_dend=T,row_d
     #timeStamp=Sys.time()
     ##print(format(timeStamp, "%x %X"))
     
-    clustObj=generate_heatmap(x=snacsObj$mut,distfun=distfun,methodR=linkMethod,methodC=linkMethod,row_anno=hasRowAnno,col_info=snacsObj$annCell,row_info=snacsObj$annSNP,col_dend=col_dend,row_dend=row_dend,col_lab=F,row_lab=F,zlm=limHM,ncc=ncc,ncr=ncr,heatmap_color=heatmap_color,col_anno_var=col_anno_var,col_anno_name=col_anno_name,col_var_info=col_var_info,row_anno_var=row_anno_var,row_anno_name=row_anno_name,row_var_info=row_var_info,densColor=NULL,plot_info=plotInfo,input_legend=showLegend)
+    clustObj=generate_heatmap(x=snacsObj$mut,distfun=distfun,methodR=linkMethod,methodC=linkMethod,row_anno=hasRowAnno,col_info=snacsObj$annCell,row_info=snacsObj$annSNP,col_dend=col_dend,row_dend=row_dend,col_lab=F,row_lab=F,zlm=limHM,ncc=ncc,ncr=ncr,heatmap_color=heatmap_color,col_anno_var=cell_anno_var,col_anno_name=cell_anno_name,col_var_info=col_var_info,row_anno_var=snp_anno_var,row_anno_name=snp_anno_name,row_var_info=row_var_info,densColor=NULL,plot_info=plotInfo,input_legend=showLegend)
     #timeStamp=c(timeStamp,Sys.time())
     ##print(format(timeStamp[2], "%x %X"))
     #print(diff(timeStamp))
-    dev.off()
+    if (outFormat!="") dev.off()
     #save(clustObj,file=paste0(dirH,"clustObj",fName,".RData"))
     if (F) {
         tbl=cutCluster(clustObj$rowClust,ann=snacsObj$annSNP,nClust=ncr,rev=T)

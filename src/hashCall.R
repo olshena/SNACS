@@ -14,7 +14,8 @@ makeHashCall=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5,probBelowForeg
         load(file=paste0(dirData,"clustObj",fName,".RData"))
     }
     #clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
-    clustInfo=snacsObj$annCell
+    #clustInfo=snacsObj$annCell
+    clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
     #if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
     #clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
     clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
@@ -226,12 +227,15 @@ makeHashCall=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5,probBelowForeg
     ###########################################################
     ###########################################################
     
-    print(table(hashCall=cd45Clust,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL))
-    
     snacsObj$annCell$hashCall=""
     j=match(snacsObj$hclustObj_bestSNPs$label,snacsObj$annCell$id); j1=which(!is.na(j)); j2=j[j1]
     snacsObj$annCell$hashCall[j2]=cd45Clust[j1]
     snacsObj$annCell$hashCall[snacsObj$hashCall==""]=NA
+    
+    cat('"hashCall" column added to snacsObj "annCell" table\n',sep="")
+    
+    cat("\n")
+    print(table(cd45Clust,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL,dnn=list("hashCall",paste0("clusterBestSNPs_hclust"))))
 
     invisible(snacsObj)
 }
@@ -256,7 +260,8 @@ generateHashDensityPlot=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5) {
         load(file=paste0(dirData,"clustObj",fName,".RData"))
     }
     #clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
-    clustInfo=snacsObj$annCell
+    #clustInfo=snacsObj$annCell
+    clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
     #if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
     #clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
     clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
