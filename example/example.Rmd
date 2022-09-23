@@ -3,84 +3,136 @@ title: "SNACS"
 output: html_document
 ---
 
+## Overview
+SNACS is an R package for demultiplexing hashes which have simultaneous profiles of single-cell genetic mutations and cell surface antibodies.
+
+
 ```{r setup, include = FALSE}
 
 ## ------------------------------
+
 ```
 
-```{r, echo = TRUE}
-## ------------------------------
+## Loading SNACS package (this section will be modified)
+The relevant packages needed to run SNACS can be loaded with the following code
+
+```{r, echo = TRUE, message=FALSE}
+
+library(VIM)
 source("../src/processData.R")
 source("../src/getBestSNPs.R")
 source("../src/hashCall.R")
 source("../src/createHeatmap.R")
 
-## ------------------------------
-## Parameters
+```
 
-verbose=FALSE
+## Loading example data
+The first step in using the SNACS package is to properly format the data. The mutation data should be a numeric matrix with SNPs in the rows and cells in the columns. 1s represent mutations and 0s non-mutations. The antibody data should be a matrix with hashes in the rows and cells in the columns. The hash antibody value should be a continuous numeric measure. An example data file has been included with the package. It has 750 cells from three hashes and 24 SNPs.
 
-exptName="snacsExpt"
-hashColors=c("green3","indianred2","dodgerblue3") ## optional
 
-## ------------------------------
-## Load data
+```{r, echo = TRUE}
 
 load("example.RData")
+
+```
+
+Matrix "mutMat" has the mutation data.
+
+
+```{r, echo = TRUE}
+
 dim(mutMat)
 mutMat[1:4,1:4]
+
+```
+
+Matrix "hashMat" has the has antibody data.
+
+
+```{r, echo = TRUE}
+
 dim(hashMat)
 hashMat[,1:4]
 
-## ------------------------------
-## Create SNACS object
+```
 
-snacsObj=SNACSList(mut=mutMat,hashes=hashMat,exptName=exptName,hashColors=hashColors)
+## Create SNACSList object
+SNACS stores data in a simple list-based data object called a SNACSList. The SNACSList object can be made for the example data by
+```{r, echo = TRUE}
+
+## Parameters mut, hashes, exptName are mandatory while hashColors is optional
+exptName <- "snacsExpt"
+hashColors <- c("green3","indianred2","dodgerblue3")
+
+snacsObj <- SNACSList(mut=mutMat,hashes=hashMat,exptName=exptName,hashColors=hashColors)
 snacsObj
 
-names(snacsObj)
 snacsObj$mut[1:4,1:4]
 snacsObj$hashes[,1:4]
 snacsObj$annHash
-
-## Impute missing mutations
-
-snacsObj=imputeMissingMutations(snacsObj=snacsObj,verbose=verbose)
-snacsObj
-
-## ------------------------------
-## Cluster data to rank and select best SNPs
-## Check heatmaps in "../output" folder
-
-## P-value for selecting best SNPs
-pvSnpThres=0.05
-
-snacsObj=getBestSNPs(snacsObj,pvSnpThres=pvSnpThres)
-
-## ------------------------------
-## Make hash calls
-
-## Parameters for making hash calls
-prob_ecdf=0.95
-propAboveBackground=0.5
-probBackgndPeak=0.6
-probBelowForeground=0.75
-
-generateHashDensityPlot(snacsObj,prob_ecdf=prob_ecdf,probBackgndPeak=probBackgndPeak)
-
-## Check hash density plots in "../output" folder
-
-snacsObj=makeHashCall(snacsObj,prob_ecdf=prob_ecdf,probBackgndPeak=probBackgndPeak,probBelowForeground=probBelowForeground,propAboveBackground=propAboveBackground,minClustSize=10,clustComparePValue=10^-5)
 snacsObj$annCell[1:4,]
+snacsObj$annSNP[1:4,]
 
-## ------------------------------
-## Create pretty heatmap
-
-clustObj=createHeatmap(snacsObj,cell_anno_var=c(snacsObj$annHash$hashNames,"hashCall","clustRankedSNPs_hclust"),cell_anno_name=c(snacsObj$annHash$hashNames,"hash","rankedSNPsCluster"),col_dend=TRUE,row_dend=FALSE,outFormat="")
-
-## ------------------------------
-## Create heatmap in pdf format. All output files are saved in "../output" folder
-
-clustObj=createHeatmap(snacsObj,cell_anno_var=c(snacsObj$annHash$hashNames,"hashCall","clustRankedSNPs_hclust"),cell_anno_name=c(snacsObj$annHash$hashNames,"hash","rankedSNPsCluster"),col_dend=TRUE,row_dend=FALSE,outputfileName=paste0("heatmap_pvBestWithAnn_",snacsObj$exptName),outFormat="pdf")
 ```
 
+## Impute missing mutations
+SNACS functions cannot work on mutation data with missing values. The missing mutations can be imputed by
+
+```{r, echo = TRUE}
+
+snacsObj <- imputeMissingMutations(snacsObj=snacsObj)
+snacsObj
+
+```
+
+## Cluster mutation data to select best SNPs to demultiplex hashes
+The cells are clustered based on mutation data. The clustering takes place in two steps. First, mutation data is clustered based on all SNPs. An intermediate heatmap is generated identifying three cell clusters representing the three hashes and the SNPs ranked by how well they separate the three cell clusters. Then a second round of clustering is performed to select SNPs which best separate the cell clusters from the first round. The heatmaps are saved in "../output" folder.
+
+```{r, echo = TRUE}
+
+## The p-value for selecting best SNPs can be specified
+pvSnpThres <- 0.05
+
+snacsObj <- getBestSNPs(snacsObj,pvSnpThres=pvSnpThres)
+snacsObj
+
+```
+
+## Generate density plots of hash antibody data
+The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder. The top figure shows the distribution of a hash antibody. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The bottom one is the histogram of the hash antibody.
+
+```{r, echo = TRUE}
+
+generateHashDensityPlot(snacsObj)
+
+```
+
+## Make hash calls
+This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the three hash IDs or called a "Doublet" when it is a mixture of hashes.
+
+```{r, echo = TRUE}
+
+snacsObj=makeHashCall(snacsObj)
+
+## The hash calls are saved in the "annCell" table in the SNACSList object
+snacsObj$annCell[1:4,]
+
+```
+
+## Create heatmap
+
+```{r, echo = TRUE}
+
+## Heatmap of the mutation data with custom cell and SNP annotations
+createHeatmap(snacsObj,
+   cell_anno_var=c(snacsObj$annHash$hashNames,"hashCall","clustRankedSNPs_hclust"),
+   cell_anno_name=c(snacsObj$annHash$hashNames,"hash","rankedSNPsCluster"),
+   outFormat="")
+
+## The parameter "outFormat" can be used to save the heatmap in pdf format. The output is saved in "../output" folder
+createHeatmap(snacsObj,
+   cell_anno_var=c(snacsObj$annHash$hashNames,"hashCall","clustRankedSNPs_hclust"),
+   cell_anno_name=c(snacsObj$annHash$hashNames,"hash","rankedSNPsCluster"),
+   outputfileName=paste0("heatmap_pvBestWithAnn_",snacsObj$exptName),outFormat="pdf")
+
+```

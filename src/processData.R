@@ -61,7 +61,8 @@ print.SNACSList <- function(snacsObj) {
     cat("No. of SNPs: ",nrow(snacsObj$mut),"\n",sep="")
     cat("No. of cells: ",ncol(snacsObj$mut),"\n",sep="")
     cat("Hashes: ",paste(snacsObj$annHash$hashNames,collapse=", "),"\n",sep="")
-    cat('All output files are saved in "../output" folder\n',sep="")
+    cat("SNACSList attributes: ",paste(names(snacsObj),collapse=", "),"\n",sep="")
+    cat('Output files are saved in "../output" folder\n',sep="")
 }
 
 ####################################################################

@@ -1,4 +1,4 @@
-createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row_dend=T,outputfileName="heatmap",outFormat=c("pdf","png","")) {
+createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row_dend=F,outputfileName="heatmap",outFormat=c("pdf","png","")) {
     
     ################################################
     ## Parameters

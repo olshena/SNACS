@@ -1,4 +1,4 @@
-makeHashCall=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5,probBelowForeground=0.75,propAboveBackground=0.5,minClustSize=100,clustComparePValue=10^-5,clustAssignPValue=10^-5,hashBackgndSDThres=2) {
+makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeground=0.75,propAboveBackground=0.5,minClustSize=10,clustComparePValue=10^-5,clustAssignPValue=10^-5,hashBackgndSDThres=2) {
     
     ## -----------------------------------
     if (length(hashBackgndSDThres)==1) hashBackgndSDThres=rep(hashBackgndSDThres,nrow(snacsObj$annHash))
@@ -232,10 +232,10 @@ makeHashCall=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5,probBelowForeg
     snacsObj$annCell$hashCall[j2]=cd45Clust[j1]
     snacsObj$annCell$hashCall[snacsObj$hashCall==""]=NA
     
-    cat('"hashCall" column added to snacsObj "annCell" table\n',sep="")
+    cat('"hashCall" column added to "annCell" table in SNACS object\n',sep="")
     
     cat("\n")
-    print(table(cd45Clust,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL,dnn=list("hashCall",paste0("clusterBestSNPs_hclust"))))
+    print(table(cd45Clust,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL,dnn=list("Hash calls",paste0("Cell clusters with best SNPs"))))
 
     invisible(snacsObj)
 }
@@ -244,7 +244,7 @@ makeHashCall=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5,probBelowForeg
 ###########################################################
 ###########################################################
 
-generateHashDensityPlot=function(snacsObj,prob_ecdf=0.25,probBackgndPeak=0.5) {
+generateHashDensityPlot=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6) {
     subsetCellFlag=""
     
     ## -----------------------------------
