@@ -1,9 +1,4 @@
-makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeground=0.75,propAboveBackground=0.5,minClustSize=10,clustComparePValue=10^-5,clustAssignPValue=10^-5,hashBackgndSDThres=2) {
-    
-    ## -----------------------------------
-    if (length(hashBackgndSDThres)==1) hashBackgndSDThres=rep(hashBackgndSDThres,nrow(snacsObj$annHash))
-    hashBackgndSDThres=hashBackgndSDThres[1:nrow(snacsObj$annHash)]
-    names(hashBackgndSDThres)=snacsObj$annHash$hashNames
+makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeground=0.75,propAboveBackground=0.5,minClustSize=10,clustComparePValue=10^-5) {
 
     ## -----------------------------------
     if (F) {
@@ -92,118 +87,55 @@ makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeg
     ###########################################################
     ## Identify doublets automatically
     
-    heightUniq=rev(unique(snacsObj$hclustObj_bestSNPs$height))
-    atHeight=heightUniq[nrow(snacsObj$annHash)]
-    hashClustMain=cutree(snacsObj$hclustObj_bestSNPs,h=atHeight)
-
-    library(skmeans)
-    getSKmeansDist=function(x) {as.dist(skmeans_xdist(x))}
-    distfun=getSKmeansDist
-    linkMethod="ward.D2"
-    
     cd45Clust=clustInfo$cd45Clust
-    for (hashThis in unique(clustInfo$cd45Clust)) {
-        #hashThis=c("CD45.27")
-        #hashThis=c("TS.1")
-        clustObjThis=snacsObj$hclustObj_bestSNPs
-        #j=match(clustObjThis$label[clustObjThis$order],clustInfo$id)
-        j=match(clustObjThis$label,clustInfo$id)
-        clustInfoThis=clustInfo[j,]
-        cd45MatThis=hashMat[j,]
+    
+    clustObjThis=snacsObj$hclustObj_bestSNPs
+    j=match(clustObjThis$label,clustInfo$id)
+    clustInfoThis=clustInfo[j,]
+    cd45MatThis=hashMat[j,]
+
+    heightUniq=rev(unique(clustObjThis$height))
+    cellId=1:nrow(clustInfoThis)
+    value=rep(NA,length(cellId))
+    valueOrig=rep(NA,length(cellId))
+    grpHigher=cutree(clustObjThis,k=1); grpHigher=grpHigher[cellId]
+    for (hId in 2:(length(heightUniq)-1)) {
+        atHeight=heightUniq[hId]
+        hashClust=cutree(clustObjThis,h=atHeight)
+        grp=hashClust; grp=grp[cellId]
         
-        heightUniq=rev(unique(clustObjThis$height))
-        cellId=which(clustInfoThis$cd45Clust==hashThis)
-        value=rep(NA,length(cellId))
-        valueOrig=rep(NA,length(cellId))
-        grpHigher=cutree(clustObjThis,k=1); grpHigher=grpHigher[cellId]
-        for (hId in 2:(length(heightUniq)-1)) {
-            atHeight=heightUniq[hId]
-            hashClust=cutree(clustObjThis,h=atHeight)
-            grp=hashClust; grp=grp[cellId]
-            table(hashClust)
-            x=table(grp)
-            if (F) {
-                if (any(x<minClustSize)) {
-                    grpTmp=grp
-                    for (k in which(x<minClustSize)) {
-                        grpThis=grp[grp==names(x)[k]][1]
-                        if (k<length(x)) {
-                            grpNext=grp[grp==names(x)[k+1]][1]
-                            if (grpHigher[grpThis]!=grpHigher[grpNext]) grpNext=grp[grp==names(x)[k-1]][1]
-                        } else {
-                            grpNext=grp[grp==names(x)[k-1]][1]
-                        }
-                        grpTmp[which(grp==grpThis)]=grpNext
-                    }
-                    grp=grpTmp
-                }
-                grpHigher=grp
-            }
-            if (any(table(grp)<minClustSize) | all(!is.na(value))) break
-            if (length(x)<2) next
-            valueOrig=paste0(hId,"_",grp,"_orig")
-            grpUniq=sort(unique(grp))
-            if (length(grpUniq)>1 & any(is.na(value))) {
-                for (gId1 in 1:(length(grpUniq)-1)) {
-                    j1=which(grp==grpUniq[gId1])
-                    if (length(j1)<minClustSize) next
-                    for (gId2 in (gId1+1):length(grpUniq)) {
-                        j2=which(grp==grpUniq[gId2])
-                        if (!is.na(value[j2[1]])) next
-                        if (length(j2)<minClustSize) {
-                            if (is.na(value[j1[1]])) value[j1]=paste0(hId,"_",gId1)
-                            value[j2]=paste0(hId,"_",gId2)
-                            next
-                        }
-                        grpThis=grp[grp%in%grpUniq[c(gId1,gId2)]]
-                        j=match(names(grpThis),clustInfoThis$id)
-                        res=summary(lm(cd45MatThis[j,hashThis]~grpThis))$coef
-                        if (res[2,4]>=clustComparePValue) {
-                            if (is.na(value[j1[1]])) value[j1]=paste0(hId,"_",gId1)
-                            value[j2]=paste0(hId,"_",gId2)
-                            next
-                        }
-                    }
+        if (any(table(grp)<minClustSize) | all(!is.na(value))) break
+        valueOrig=paste0(hId,"_",grp,"_orig")
+        grpUniq=sort(unique(grp))
+        if (any(is.na(value))) {
+            for (gId1 in 1:length(grpUniq)) {
+                j1=which(grp==grpUniq[gId1])
+                if (length(j1)<minClustSize) next
+                res=DescTools::HotellingsT2Test(cd45MatThis[j1,],mu=hashBackgnd["thres",])
+                if (res$p.value>=clustComparePValue) {
+                    if (is.na(value[j1[1]])) value[j1]=paste0(hId,"_",gId1)
+                    next
                 }
             }
         }
-        j=which(is.na(value))
-        if (length(j)!=0) value[j]=valueOrig[j]
-        table(value,exclude=NULL)
-        
-        x=value
-        x[is.na(x)]="0"
-        for (k in unique(x)) {
-            #cat("\n\n--------- ",k," ----------\n",sep="")
-            j=cellId[which(x==k)]
-            inHashes=c()
-            for (hashId in snacsObj$annHash$hashNames) {
-                #if (mean(cd45MatThis[j,hashId]>(hashBackgnd["mean",hashId]+hashBackgndSDThres[hashId]*hashBackgnd["sd",hashId]))>0.5) {inHashes=c(inHashes,hashId)}
-                if (round(mean(cd45MatThis[j,hashId]>hashBackgnd["thres",hashId]),2)>=propAboveBackground) {inHashes=c(inHashes,hashId)}
-            }
-            if (length(inHashes)==1) {cd45Clust[j]=inHashes
-            } else if (length(inHashes)==2) {cd45Clust[j]="Doublet"
-            } else if (length(inHashes)>2) {cd45Clust[j]="Multiplet"
-            } else {cd45Clust[j]=""}
-        }
-        if (F) {
-            table(x)
-            table(auto=cd45Clust[cellId],man=clustInfoThis$hashCall[cellId],exclude=NULL)
-            table(value,man=clustInfoThis$hashCall[cellId],exclude=NULL)
-            table(value,clusterOrig=clustInfoThis$cd45Clust[cellId],exclude=NULL)
-            table(value,auto=cd45Clust[cellId],exclude=NULL)
-        }
     }
-
-    if (F) {
-        j=match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id)
-        callInfo=clustInfo[j,which(!names(clustInfo)%in%colnames(hashMat))]
-        nm=names(callInfo)
-        callInfo=cbind(callInfo,hashMat[j,],hashCallAuto=cd45Clust,stringsAsFactors=F)
-        names(callInfo)=c(nm,colnames(hashMat),"hashCallAuto")
-        save(callInfo,file=paste0(dirResult,"hashCall_",snacsObj$exptName,".RData"))
+    j=which(is.na(value))
+    if (length(j)!=0) value[j]=valueOrig[j]
+    table(value,exclude=NULL)
+    
+    x=value
+    x[is.na(x)]="0"
+    for (k in unique(x)) {
+        j=cellId[which(x==k)]
+        inHashes=c()
+        for (hashId in snacsObj$annHash$hashNames) {
+            if (round(mean(cd45MatThis[j,hashId]>hashBackgnd["thres",hashId]),2)>=propAboveBackground) {inHashes=c(inHashes,hashId)}
+        }
+        if (length(inHashes)==1) {cd45Clust[j]=inHashes
+        } else if (length(inHashes)==2) {cd45Clust[j]="Doublet"
+        } else if (length(inHashes)>2) {cd45Clust[j]="Multiplet"
+        } else {cd45Clust[j]=""}
     }
-
     ###########################################################
     ###########################################################
     ## Generate hash call table
