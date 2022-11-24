@@ -23,4 +23,5 @@ or
 
 This will give a demo of the package.
 > require(SNACS)
+or
 > vignette("SNACS")
