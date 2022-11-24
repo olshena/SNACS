@@ -2,7 +2,7 @@
 
 SNACS is a package in R. It demuliplexes samples of single cell mutation data using single cell mutation data and hash antibody data.
 
-To install "SNACS" package we will need "devtools" package. and "heatmap4" packages.
+To install "SNACS" package we will need "devtools" package.
 "SNACS" is dependent on "heatmap4" which is available on GitHub.
 
 > library(devtools)
