@@ -10,18 +10,18 @@ To install "SNACS" package we will need "devtools" package.
 
 Run this to install "heatmap4".
 > install_github("UCSF-CBI/heatmap4/heatmap4")
-> 
+
 or 
 > install_github("UCSF-CBI/heatmap4/heatmap4",auth_token="abc")
 
 Run this to install "SNACS".
 > install_github("olshena/SNACS/SNACS",build_vignettes=TRUE)
-> 
+
 or
 > install_github("olshena/SNACS/SNACS",build_vignettes=TRUE,auth_token="abc")
 
-This will give a demo of the package.
+Load the package.
 > require(SNACS)
-> 
-or
+
+This will give a demo of the package.
 > vignette("SNACS")
