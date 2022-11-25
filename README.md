@@ -12,15 +12,13 @@ Run this to install "heatmap4".
 or 
 > install_github("UCSF-CBI/heatmap4/heatmap4",auth_token="abc")
 
-> install_github("olshena/SNACS/SNACS",build_vignettes=TRUE)
-or
-> install_github("olshena/SNACS/SNACS",build_vignettes=TRUE,auth_token="abc")
-
 Run this to install "SNACS".
 > install_github("olshena/SNACS/SNACS",build_vignettes=TRUE)
 or
 > install_github("olshena/SNACS/SNACS",build_vignettes=TRUE,auth_token="abc")
 
-This will give a demo of the package.
+Load package.
 > require(SNACS)
+
+See a  demo of the package.
 > vignette("SNACS")

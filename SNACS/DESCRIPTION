@@ -12,7 +12,6 @@ LazyData: true
 Imports:
 	VIM,
         skmeans,
-        heatmap4,
         cluster,
         DescTools
 Depends: 
