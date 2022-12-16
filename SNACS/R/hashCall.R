@@ -2,20 +2,18 @@
 ####################################################################
 #' Make hash calls.
 #'
-#' Make hash call based on mutation and hash data.
+#' Make hash calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the hash IDs or called a "Doublet" when it is a mixture of hashes. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background for that hash. The empirical background distribution of a hash antibody is estimated by taking the background mode of the data and generating an empirical symmetric distribution around it. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops it reaches a minimum number of cells.
 #'
 #' @param snacsObj SNACSList object
-#' @param prob_ecdf .
-#' @param probBackgndPeak .
-#' @param probBelowForeground .
-#' @param propAboveBackground .
-#' @param minClustSize Integer. Minimum number of cells required to be in a cluster. Default is 10
-#' @param clustComparePValue P-value cutoff to compare cluster pairs
+#' @param backgndThreshold Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
+#' @param cellProportionAboveBackgnd Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
+#' @param cellProportionBelowBackgndMode Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
+#' @param cellProportionForModeDetection Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
+#' @param minClustSize Minimum number of cells required to be in a cluster. Default is 10
+#' @param clustComparePValue P-value threshold to compare cluster pairs
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeground=0.75,propAboveBackground=0.5,minClustSize=10,clustComparePValue=10^-5) {
-
-    #snacsObj; prob_ecdf=0.95; probBackgndPeak=0.6; probBelowForeground=0.75; propAboveBackground=0.5; minClustSize=10; clustComparePValue=10^-5
+makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,clustComparePValue=10^-5) {
     
     ## -----------------------------------
     if (F) {
@@ -27,19 +25,15 @@ makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeg
         fName=paste0(subsetCellFlag,"_pvBest_ann_",snacsObj$exptName)
         load(file=paste0(dirData,"clustObj",fName,".RData"))
     }
-    #clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
-    #clustInfo=snacsObj$annCell
     clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
-    #if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
-    #clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
     clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
 
     ## --------------------------------------
+    ## For manual annotation of doublets
     nClust=nrow(snacsObj$annHash)
     nClustFilt=NA; clustFilt=NA; clustRename=NA
     ## --------------------------------------
 
-    #clustInfo$clustId=clustInfo[,paste0("clustId_",nrow(snacsObj$annHash))]
     clustInfo$clustId=stats::cutree(snacsObj$hclustObj_bestSNPs,k=nrow(snacsObj$annHash))
     if (!is.na(nClustFilt[1])) {
         subClust_filt=NULL
@@ -74,19 +68,14 @@ makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeg
         xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
         xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
         k1=which.max(x$y)
-        if (stats::quantile(hashMat[,k],probs=probBackgndPeak)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=probBelowForeground)])
+        if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
         xx=x$x[k1]
         x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
         hashBackgndData=x2
         hashBackgndECDF=stats::ecdf(hashBackgndData)
-        #ecdfbg=1-hashBackgndECDF(x2)
         x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
         ecdfbg=1-hashBackgndECDF(x2)
-        if (F) {
-            ord=order(ecdfbg,decreasing=T); xx=x2[ord]; yy=ecdfbg[ord]
-            hashBackgnd[,k]=c(mean(x2),stats::sd(x2),xx[which.min(yy>=prob_ecdf)])
-        }
-        hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=prob_ecdf))
+        hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=backgndThreshold))
     }
 
     clustInfo$cd45Clust="Doublet"
@@ -127,7 +116,6 @@ makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeg
         hashClust=stats::cutree(clustObjThis,h=atHeight)
         grp=hashClust; grp=grp[cellId]
         
-        #if (any(table(grp)<minClustSize) | all(!is.na(value))) break
         if (all(table(grp)<minClustSize) | all(!is.na(value))) break
         valueOrig=paste0(hId,"_",grp,"_orig")
         grpUniq=sort(unique(grp))
@@ -145,7 +133,6 @@ makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeg
                     }
                     grpThis=grp[grp%in%grpUniq[c(gId1,gId2)]]
                     j=match(names(grpThis),clustInfoThis$id)
-                    #res=summary(lm(cd45MatThis[j,hashThis]~grpThis))$coef
                     res=DescTools::HotellingsT2Test(cd45MatThis[j,]~grpThis)
                     if (res$p.value>=clustComparePValue) {
                         if (is.na(value[j1[1]])) value[j1]=paste0(hId,"_",gId1)
@@ -166,7 +153,7 @@ makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeg
         j=cellId[which(x==k)]
         inHashes=c()
         for (hashId in snacsObj$annHash$hashNames) {
-            if (round(mean(cd45MatThis[j,hashId]>hashBackgnd["thres",hashId]),2)>=propAboveBackground) {inHashes=c(inHashes,hashId)}
+            if (round(mean(cd45MatThis[j,hashId]>hashBackgnd["thres",hashId]),2)>=cellProportionAboveBackgnd) {inHashes=c(inHashes,hashId)}
         }
         if (length(inHashes)==1) {cd45Clust[j]=inHashes
         } else if (length(inHashes)==2) {cd45Clust[j]="Doublet"
@@ -192,16 +179,18 @@ makeHashCall=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,probBelowForeg
 
 ####################################################################
 ####################################################################
-#' Make hash calls.
+#' Generate hash antibody background density plot.
 #'
-#' Make hash call based on mutation and hash data.
+#' The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each subject. The top figure shows the distribution of a hash antibody. The middle figure shows the distribution of the background only. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The green lines mark the median and 95th percentile of the background distribution. The bottom figure is the histogram of the hash antibody data. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of that hash antibody. The background of the hash antibody is estimated by determining the background mode based on all cells and generating an empirical symmetric distribution around it.
+
 #'
 #' @param snacsObj SNACSList object
-#' @param prob_ecdf .
-#' @param probBackgndPeak .
+#' @param backgndThreshold Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
+#' @param cellProportionBelowBackgndMode Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
+#' @param cellProportionForModeDetection Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @export
-generateHashDensityPlot=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,outputFormat=c("","pdf","png")) {
+generateHashDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {
     outputFormat=outputFormat[1]
 
     subsetCellFlag=""
@@ -224,11 +213,7 @@ generateHashDensityPlot=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,out
         fName=paste0(subsetCellFlag,"_pvBest_ann_",snacsObj$exptName)
         load(file=paste0(dirData,"clustObj",fName,".RData"))
     }
-    #clustInfo=read.table(paste0(dirData,"clustInfoCell",fName,".txt"), sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
-    #clustInfo=snacsObj$annCell
     clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
-    #if (!"hashCallMan"%in%names(clustInfo)) clustInfo$hashCallMan=""
-    #clustInfo$hashCall=sub("-",".",clustInfo$hashCallMan)
     clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
 
     ## --------------------------------------
@@ -236,7 +221,6 @@ generateHashDensityPlot=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,out
     nClustFilt=NA; clustFilt=NA; clustRename=NA
     ## --------------------------------------
 
-    #clustInfo$clustId=clustInfo[,paste0("clustId_",nrow(snacsObj$annHash))]
     clustInfo$clustId=stats::cutree(snacsObj$hclustObj_bestSNPs,k=nrow(snacsObj$annHash))
     if (!is.na(nClustFilt[1])) {
         subClust_filt=NULL
@@ -268,17 +252,15 @@ generateHashDensityPlot=function(snacsObj,prob_ecdf=0.95,probBackgndPeak=0.6,out
         xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
         xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
         k1=which.max(x$y)
-        if (stats::quantile(hashMat[,k],probs=probBackgndPeak)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=.75)])
+        if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
         xx=x$x[k1]
         x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
         hashBGSymData=x2
         hashBackgndECDF=stats::ecdf(hashBGSymData)
-        #ecdfxs=1-hashBackgndECDF(hashMat[,k])
-        #ecdfbg=1-hashBackgndECDF(x2)
         x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
         hashBGData=x2
         ecdfbg=1-hashBackgndECDF(hashBGData)
-        vertLine=c(stats::median(x2),stats::quantile(x2,probs=prob_ecdf)); vertLineLab=c("med",prob_ecdf)
+        vertLine=c(stats::median(x2),stats::quantile(x2,probs=backgndThreshold)); vertLineLab=c("med",backgndThreshold)
         plot(x,xlim=xlim,ylim=ylim,main=paste0(snacsObj$exptName,": ",colnames(hashMat)[k]),xlab="Hash",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis)
         graphics::lines(stats::density(x2,bw="SJ"),col="red"); graphics::abline(v=vertLine,col="green")
         plot(stats::density(x2,bw="SJ"),xlim=xlim,ylim=ylim,main="",xlab="Hash background",col="red",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis); graphics::abline(v=vertLine,col="green")

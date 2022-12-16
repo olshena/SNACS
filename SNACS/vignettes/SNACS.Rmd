@@ -14,14 +14,19 @@ knitr::opts_chunk$set(
 )
 ```
 ## Overview
-SNACS is an R package for demultiplexing hashes which have simultaneous profiles of single-cell genetic mutations and cell surface antibodies.
+SNACS is an R package for demultiplexing hashes which have simultaneous profiles of single-cell genetic mutations and cell surface antibodies. It identifies the hash of each cell in the mutation data where multiple hashes were profiled concurrently. The hash designations are made based on the mutation and the hash antibody data.
 
+## Load SNACS package
+The first step is to load the SNACS package.
 ```{r setup}
 library(SNACS)
 ```
 
-## Loading example data
-The first step in using the SNACS package is to properly format the data. The mutation data should be a numeric matrix with SNPs in the rows and cells in the columns. 1s represent mutations and 0s non-mutations. The antibody data should be a matrix with hashes in the rows and cells in the columns. The hash antibody value should be a continuous numeric measure. An example data file has been included with the package. It has 750 cells from three hashes and 24 SNPs.
+## Input data format
+We have to properly format the input data. SNACS required  a matrix containing the single cell mutation data from the multiplexed profiles of subjects and a matrix containing the hash antibody data of each subject. The mutation data should be a numeric matrix with SNPs in the rows and cells in the columns. 1s represent mutations and 0s non-mutations. The antibody data should be a matrix with subjects in the rows and cells in the columns. The hash antibody values should be continuous numeric measures. Optional cell and SNP level annotations can be provided as data frames.
+
+## Example data
+An example data has been included with the package. It has mutation and antibody data from 3 subjects with 750 cells and 24 SNPs. We will demonstrate the package with this data.
 
 Matrix "mutMat" has the mutation data.
 
@@ -41,7 +46,7 @@ hashMat[,1:4]
 ```
 
 ## Create SNACSList object
-SNACS stores data in a simple list-based data object called a SNACSList. The SNACSList object can be made for the example data by
+SNACS stores data in a simple list-based data object called a SNACSList. The SNACSList object can be made for the example data as follows.
 ```{r, echo = TRUE}
 
 ## Parameters mut, hashes, exptName are mandatory while hashColors is optional
@@ -54,7 +59,7 @@ snacsObj
 ```
 
 ## Impute missing mutations
-SNACS functions cannot work on mutation data with missing values. The missing mutations can be imputed by
+Currently, SNACS package cannot work on mutation data with missing values. We can impute missing mutations as follows.
 
 ```{r, echo = TRUE}
 
@@ -64,7 +69,13 @@ snacsObj
 ```
 
 ## Cluster mutation data to select best SNPs to demultiplex hashes
-The cells are clustered based on mutation data. The clustering takes place in two steps. First, mutation data is clustered based on all SNPs. An intermediate heatmap is generated identifying three cell clusters representing the three hashes and the SNPs ranked by how well they separate the three cell clusters. Then a second round of clustering is performed to select SNPs which best separate the cell clusters from the first round. The heatmaps are saved in "../output" folder.
+The cells are clustered based on mutation data. The clustering takes place in two steps. First, mutation data is clustered based on all SNPs. An intermediate heatmap is generated identifying the cell clusters representing the hashes and the SNPs ranked by how well they separate the clusters. Then a second round of clustering is performed to select SNPs which best separate the cell clusters from the first round. We can specify "pdf" or "png" format for the figures. The ouputs are then saved in the "../output" folder.
+
+The "heatmap of ranked SNPs" shows the 3 clusters, delineated in red, separating the cells from the 3 subjects after the first round of clustering of the example data. The continuous antibody data for each subject are shown as grey color bars.
+
+The "heatmap of best SNPs" shows the 3 clusters, delineated in red, after the second round of clustering of the example data. The color bar with the light blue, yellow and dark blue clusters shows the cluster designations from the first round of clustering. Again, the continuous antibody data are shown as grey color bars.
+
+The cluster designations from the first round of clustering are saved in the column "clustRankedSNPs_hclust" of the "annCell" attribute of the "SNACSList" object. The output from the second round of clustering, which is an "hclust" object, is saved as the attribute "hclustObj_bestSNPs". This attribute is later used is making the hash calls.
 
 ```{r, echo = TRUE}
 
@@ -77,7 +88,7 @@ snacsObj
 ```
 
 ## Generate density plots of hash antibody data
-The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder. The top figure shows the distribution of a hash antibody. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The bottom one is the histogram of the hash antibody.
+The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each subject. The top figure shows the distribution of a hash antibody. The middle figure shows the distribution of the background only. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The green lines mark the median and 95th percentile of the background distribution. The bottom figure is the histogram of the hash antibody data. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of that hash antibody. The background of the hash antibody is estimated by determining the background mode based on all cells and generating an empirical symmetric distribution around it.
 
 ```{r, fig.show = "hold", out.width = "50%", echo = TRUE}
 
@@ -86,7 +97,7 @@ generateHashDensityPlot(snacsObj)
 ```
 
 ## Make hash calls
-This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the three hash IDs or called a "Doublet" when it is a mixture of hashes.
+This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned the ID of one of the hashes or called a "Doublet" when it is a mixture of hashes. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background of that hash.
 
 ```{r, echo = TRUE}
 
@@ -97,15 +108,15 @@ snacsObj$annCell[1:4,]
 
 ```
 
-## Create heatmap
-Heatmap of the mutation data with custom cell and SNP annotations.
-The parameter "outputFormat" can be used to save the heatmap in pdf format. The output is saved in "../output" folder.
+## Annotate heatmap
+Custom cell and SNP annotations can be added to the heatmaps. Here the heatmap of the best SNPS are annotated with color bars for the hash calls along with the clusters from the first round of clustering, and the hash antibody measures.
+The parameter "outputFormat" can be used to save the heatmap in "pdf" or "png" format. The output is then saved in "../output" folder.
 
 ```{r, fig.show = "hold", out.width = "50%", echo = TRUE}
 
 createHeatmap(snacsObj,
-   cell_anno_var=c(snacsObj$annHash$hashNames,"hashCall","clustRankedSNPs_hclust"),
-   cell_anno_name=c(snacsObj$annHash$hashNames,"hash","cluster"),
+   cell_anno_var=c("hashCall",snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"),
+   cell_anno_name=c("hash",snacsObj$annHash$hashNames,"cluster"),
    outputFormat="")
 
 ```

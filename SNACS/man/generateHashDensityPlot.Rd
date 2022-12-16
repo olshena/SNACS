@@ -2,24 +2,27 @@
 % Please edit documentation in R/hashCall.R
 \name{generateHashDensityPlot}
 \alias{generateHashDensityPlot}
-\title{Make hash calls.}
+\title{Generate hash antibody background density plot.}
 \usage{
 generateHashDensityPlot(
   snacsObj,
-  prob_ecdf = 0.95,
-  probBackgndPeak = 0.6,
+  backgndThreshold = 0.95,
+  cellProportionBelowBackgndMode = 0.6,
+  cellProportionForModeDetection = 0.75,
   outputFormat = c("", "pdf", "png")
 )
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{prob_ecdf}{.}
+\item{backgndThreshold}{Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
 
-\item{probBackgndPeak}{.}
+\item{cellProportionBelowBackgndMode}{Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
+
+\item{cellProportionForModeDetection}{Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
 
 \item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
 }
 \description{
-Make hash call based on mutation and hash data.
+The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each subject. The top figure shows the distribution of a hash antibody. The middle figure shows the distribution of the background only. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The green lines mark the median and 95th percentile of the background distribution. The bottom figure is the histogram of the hash antibody data. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of that hash antibody. The background of the hash antibody is estimated by determining the background mode based on all cells and generating an empirical symmetric distribution around it.
 }
