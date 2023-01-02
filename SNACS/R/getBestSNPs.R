@@ -390,18 +390,18 @@ getBestSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","skm
             annSNPthis=annSNPthis[i,]
         }
     }
-        
-    ################################################
-    j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
-    datThis=datThis[,j]
-    hashesThis=hashesThis[,j]
-    annCellThis=annCellThis[j,]
 
     ################################################
     #snacsObj[["bestSNPs"]]=annSNPthis$id
     i=match(annSNPthis$id,snacsObj$annSNP$id)
     snacsObj$mut=snacsObj$mut[i,]
     snacsObj$annSNP=snacsObj$annSNP[i,]
+    
+    ################################################
+    j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
+    snacsObj$mut=snacsObj$mut[,j]
+    snacsObj$hashes=snacsObj$hashes[,j]
+    snacsObj$annCell=snacsObj$annCell[j,]
 
     ###########################################################
     ###########################################################
@@ -409,7 +409,7 @@ getBestSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","skm
         #i=match(snacsObj$bestSNPs,snacsObj$annSNP$id)
         #clustObj=createHeatmap(list(mut=snacsObj$mut[i,],annSNP=snacsObj$annSNP[i,],annCell=snacsObj$annCell),cell_anno_var,col_dend=T,row_dend=F,outputfileName)
     }
-    clustObj=createHeatmap(snacsObj,cell_anno_var,col_dend=T,row_dend=F,h_title=h_title,outputfileName=outputfileName)
+    clustObj=createHeatmap(snacsObj,cell_anno_var,col_dend=T,row_dend=F,h_title=h_title,outputFormat=outputFormat,outputfileName=outputfileName)
     snacsObj[["hclustObj_bestSNPs"]]=clustObj$colClust
     
 

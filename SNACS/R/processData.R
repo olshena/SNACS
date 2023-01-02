@@ -171,6 +171,10 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
         rm(x)
     }
 
+    propMutPerCell=apply(datThis,2,function(x) mean(x==1,na.rm=T)); j=which(propMutPerCell>0 & propMutPerCell<1)
+    datThis=datThis[,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]
+    rm(propMutPerCell)
+
     snacsObj[["mut"]]=datThis
     snacsObj[["hashes"]]=hashesThis
     snacsObj[["annCell"]]=annCellThis

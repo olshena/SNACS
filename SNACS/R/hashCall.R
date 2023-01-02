@@ -62,7 +62,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
             hashMat[,k]=xAll
         }
     }
-    hashBackgnd=matrix(nrow=nrow(snacsObj$annHash),ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres"),snacsObj$annHash$hashNames))
+    hashBackgnd=matrix(nrow=3,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres"),snacsObj$annHash$hashNames))
     for (k in 1:ncol(hashMat)) {
         x=stats::density(hashMat[,k],bw="SJ",na.rm=T)
         xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
