@@ -4,10 +4,25 @@
 \alias{imputeMissingMutations}
 \title{Imputes missing mutations in SNACSList object.}
 \usage{
-imputeMissingMutations(snacsObj, verbose = F)
+imputeMissingMutations(
+  snacsObj,
+  proportionMissingPerCell = 0.4,
+  proportionMissingPerSNP = 0.4,
+  proportionMutatedPerCell = c(0, 1),
+  proportionMutatedPerSNP = c(0.1, 0.8),
+  verbose = F
+)
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
+
+\item{proportionMissingPerCell}{.}
+
+\item{proportionMissingPerSNP}{.}
+
+\item{proportionMutatedPerCell}{.}
+
+\item{proportionMutatedPerSNP}{.}
 
 \item{verbose}{Prints information when running the method}
 }

@@ -11,7 +11,8 @@ makeHashCall(
   cellProportionForModeDetection = 0.75,
   cellProportionAboveBackgnd = 0.5,
   minClustSize = 10,
-  clustComparePValue = 10^-5
+  clustComparePValue = 10^-5,
+  maxClustSampleSize = 5000
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ makeHashCall(
 \item{minClustSize}{Minimum number of cells required to be in a cluster. Default is 10}
 
 \item{clustComparePValue}{P-value threshold to compare cluster pairs}
+
+\item{maxClustSampleSize}{Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000}
 }
 \value{
 A SNACSList object

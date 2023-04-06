@@ -77,30 +77,9 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     #plotInfo=list(margins=c(.2,.2),cexRow=0.2,cexCol=0.2,cexRow=2,cexColSide=1.2,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
     #plotInfo=list(margins=c(5,.2),cexRow=0.2,cexCol=0.2,cexRow=2,cexRowSide=1,cexColSide=1.2,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
     plotInfo=list(margins=c(5,.2),cexRow=0.2,cexCol=0.2,cexRow=2,cexRowSide=1,cexColSide=.7,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
-    if (F) {
-        col_var_info=list(hash=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
-                                level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
-                            hashKnown=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
-                                level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
-                            hashUnknown=list(color=c("green3","indianred2","dodgerblue3","darkgreen","black","white"),
-                                level=c("CD45-26","CD45-27","CD45-28","Multiplet","nosignal","")),
-                            hashCall=list(color=c("green3","indianred2","dodgerblue3","cyan2","darkgreen","black","white"),
-                                level=c("CD45-26","CD45-27","CD45-28","Doublet","Multiplet","nosignal","")),
-                            hashCallMan=list(color=c("green3","indianred2","dodgerblue3","cyan2","darkgreen","black","white"),
-                                level=c("CD45-26","CD45-27","CD45-28","Doublet","Multiplet","nosignal","")),
-                            mclustDallCall=list(color=c("green3","indianred2","dodgerblue3","cyan2","magenta3","yellow2","black"),
-                                level=c("MixModel-26","MixModel-27","MixModel-28","MixModel-26-27","MixModel-27-28","MixModel-26-28","MixModel-nocall")),
-                            CD45.26=list(limit=c(-4,4)),CD45.27=list(limit=c(-4,4)),CD45.28=list(limit=c(-4,4)),
-                            cluster_hclust=list(color=c("pink","magenta","purple"),level=paste0("cluster",1:3)),
-                            cluster_skmean=list(color=c("pink","magenta","purple"),level=1:3),
-                            cluster_skmean2=list(color=c("pink","magenta","purple"),level=1:3),
-                            cluster_skmean_skmeanSkmean=list(color=c("pink","magenta","purple"),level=1:3),
-                            cluster_skmean2_skmeanSkmean=list(color=c("pink","magenta","purple"),level=1:3),
-                            cluster_skmean2_hclustSkmean=list(color=c("pink","magenta","purple"),level=1:3),
-                            meanDepth=list(limit=c(20,80)),meanQuality=list(limit=c(25,95)))
-    }
+
     col_var_info=list()
-    col_var_info[["hashCall"]]=list(color=c(snacsObj$annHash$hashColors,"cyan2"),level=c(snacsObj$annHash$hashNames,"Doublet"))
+    col_var_info[["hashCall"]]=list(color=c(snacsObj$annHash$hashColors,"cyan2","white"),level=c(snacsObj$annHash$hashNames,"Doublet","Multiplet"))
     row_var_info=list(SnpEff_Annotation_Impact=list(color=c("brown","yellow","orange","red","white"),
                             level=c("HIGH","LOW","MODERATE","MODIFIER","")),
                             meanDepth=list(limit=c(20,80)),meanQuality=list(limit=c(25,95)))

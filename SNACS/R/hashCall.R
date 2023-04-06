@@ -11,10 +11,14 @@
 #' @param cellProportionForModeDetection Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
 #' @param minClustSize Minimum number of cells required to be in a cluster. Default is 10
 #' @param clustComparePValue P-value threshold to compare cluster pairs
+#' @param maxClustSampleSize Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,clustComparePValue=10^-5) {
-    
+makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,clustComparePValue=10^-5,maxClustSampleSize=5000) {
+
+    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; cellProportionAboveBackgnd=0.5; minClustSize=10; clustComparePValue=10^-5
+    #minClustSize=2; clustComparePValue=0.05; maxClustSampleSize=5000
+
     ## -----------------------------------
     if (F) {
         subsetCellFlag=""
@@ -132,6 +136,10 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
                         next
                     }
                     grpThis=grp[grp%in%grpUniq[c(gId1,gId2)]]
+                    if (length(j)>maxClustSampleSize) {
+                        set.seed(12345); j=sample(1:length(grpThis),maxClustSampleSize,replace=FALSE)
+                        grpThis=grpThis[j]
+                    }
                     j=match(names(grpThis),clustInfoThis$id)
                     res=DescTools::HotellingsT2Test(cd45MatThis[j,]~grpThis)
                     if (res$p.value>=clustComparePValue) {
@@ -155,11 +163,29 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
         for (hashId in snacsObj$annHash$hashNames) {
             if (round(mean(cd45MatThis[j,hashId]>hashBackgnd["thres",hashId]),2)>=cellProportionAboveBackgnd) {inHashes=c(inHashes,hashId)}
         }
-        if (length(inHashes)==1) {cd45Clust[j]=inHashes
-        } else if (length(inHashes)==2) {cd45Clust[j]="Doublet"
-        } else if (length(inHashes)>2) {cd45Clust[j]="Multiplet"
-        } else {cd45Clust[j]=""}
+        if (F) {
+            if (length(inHashes)==1) {cd45Clust[j]=inHashes
+            } else if (length(inHashes)==2) {cd45Clust[j]="Doublet"
+            } else if (length(inHashes)>2) {cd45Clust[j]="Multiplet"
+            } else {cd45Clust[j]=""}
+        }
+        cd45Clust[j]=paste(inHashes,collapse="_")
     }
+
+    j=clustObjThis$order
+    grp=as.integer(as.factor(x[j]))
+    j=which(diff(grp)!=0)
+    jj=j
+    j1=c(1,j+1); j2=c(j,length(grp))
+    for (j in 1:length(j1)) {
+        if (any(grp[j1[j]:j2[j]]!=grp[j1[j]])) print(j)
+    }
+    clustSplit=rep(1,length(grp))
+    for (j in 1:length(j1)) {
+        if (j%%2==0) clustSplit[j1[j]:j2[j]]=2
+    }
+    clustSplit=clustSplit[match(clustInfo$id,clustObjThis$label[clustObjThis$order])]
+    subClust=x
 
     ###########################################################
     ###########################################################
@@ -168,7 +194,9 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
     j=match(snacsObj$hclustObj_bestSNPs$label,snacsObj$annCell$id); j1=which(!is.na(j)); j2=j[j1]
     snacsObj$annCell$hashCall[j2]=cd45Clust[j1]
     snacsObj$annCell$hashCall[snacsObj$hashCall==""]=NA
-    
+    snacsObj$annCell$clustSplit=clustSplit
+    snacsObj$annCell$subClust=subClust
+
     cat('"hashCall" column added to "annCell" table in SNACS object\n',sep="")
     
     cat("\n")

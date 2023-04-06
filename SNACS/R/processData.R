@@ -9,10 +9,11 @@
 #' @param exptName Experiment name
 #' @param annCell Data frame of cell annotation
 #' @param annSNP Data frame of SNP annotation
+#' @param annHash Data frame of hash annotation
 #' @param hashColors Colors of the hashes
 #' @return A SNACSList object
 #' @export
-SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,hashColors=NULL) {
+SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,annHash=NULL,hashColors=NULL) {
     
     if (!is.matrix(mut)) stop("mut has to be a matrix of 0s and 1s")
     if (!any(mut%in%c(0,1))) stop("mut has to be a matrix of 0s and 1s")
@@ -42,7 +43,23 @@ SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,hashColors=NULL)
     for (k in 1:ncol(annSNP)) if (is.factor(annSNP[,k])) annSNP[,k]=as.character(annSNP[,k])
 
     hashColors=hashColors[1:length(hashNames)]
-
+    tbl=data.frame(hashNames=hashNames,hashColors=hashColors,stringsAsFactors=F)
+    if (is.null(annHash)) {
+        annHash=tbl
+    } else {
+        if (length(hashNames)!=nrow(annHash)) stop("Number of hashes in hashes matrix and annHash do not match")
+        k=which(!names(annHash)%in%names(tbl))
+        if (length(k)==0) {
+            annHash=tbl
+        } else {
+            nm=c(names(tbl),names(annHash)[k])
+            annHash=cbind(tbl,annHash[,k],stringsAsFactors=F)
+            names(annHash)=nm
+            rm(nm)
+        }
+    }
+    rm(tbl)
+    
     ## Generate scratch folder if it doesn't exist
     dirData="../data/"
     if (!file.exists(dirData)) dir.create(file.path(dirData))
@@ -55,7 +72,7 @@ SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,hashColors=NULL)
         stop("annCell has to be a data frame with at least two columns - id and desc")
     }
 
-    snacsObj=list(mut=mut,hashes=hashes,exptName=exptName,annHash=data.frame(hashNames=hashNames,hashColors=hashColors,stringsAsFactors=F),annCell=annCell,annSNP=annSNP)
+    snacsObj=list(mut=mut,hashes=hashes,exptName=exptName,annHash=annHash,annCell=annCell,annSNP=annSNP)
     
     #snacsObj=new("SNACSList",snacsObj)
     attr(snacsObj,"class")="SNACSList"
@@ -87,9 +104,13 @@ print.SNACSList <- function(x,...) {
 #'
 #' @param snacsObj SNACSList object
 #' @param verbose Prints information when running the method
+#' @param proportionMissingPerCell .
+#' @param proportionMissingPerSNP .
+#' @param proportionMutatedPerCell .
+#' @param proportionMutatedPerSNP .
 #' @return A SNACSList object
 #' @export
-imputeMissingMutations=function(snacsObj,verbose=F) {
+imputeMissingMutations=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSNP=0.4,proportionMutatedPerCell=c(0,1),proportionMutatedPerSNP=c(0.1,0.8),verbose=F) {
     timeStamp=Sys.time()
     #print(format(timeStamp, "%x %X"))
 
@@ -107,47 +128,62 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
         cat("\n Number of cells in raw data: ",numCell,"\n",sep="")
     }
 
-    propMissPerCell <- apply(snacsObj$mut,2,function(x) sum(is.na(x)))/nrow(snacsObj$mut)
+    propMissPerCellVec <- apply(snacsObj$mut,2,function(x) sum(is.na(x)))/nrow(snacsObj$mut)
     if (verbose) {
         if (F) {
-            cat("\npropMissPerCell")
-            print(summary(propMissPerCell))
-            #save(propMissPerCell,file=paste0(dirOutput,"propMissPerCell_",snacsObj$exptName,".RData"))
-            grDevices::png(paste0(dirOutput,"hist_propMissPerCell_",snacsObj$exptName,".png"))
-            graphics::hist(propMissPerCell,xlim=c(0,1),main=snacsObj$exptName,xlab="Proportion missing in a cell",ylab="Count",breaks=100)
+            cat("\npropMissPerCellVec")
+            print(summary(propMissPerCellVec))
+            #save(propMissPerCellVec,file=paste0(dirOutput,"propMissPerCellVec_",snacsObj$exptName,".RData"))
+            grDevices::png(paste0(dirOutput,"hist_propMissPerCellVec_",snacsObj$exptName,".png"))
+            graphics::hist(propMissPerCellVec,xlim=c(0,1),main=snacsObj$exptName,xlab="Proportion missing in a cell",ylab="Count",breaks=100)
             grDevices::dev.off()
         }
     }
-    i=1:nrow(snacsObj$mut); j=which(propMissPerCell<0.4)
+    i=1:nrow(snacsObj$mut); j=which(propMissPerCellVec<proportionMissingPerCell)
+    if (length(j)<10) {
+        cat("\nProportion missing per cell:\n")
+        print(round(summary(propMissPerCellVec),2))
+        stop(paste0("Not enough cells having proportion missing below ",proportionMissingPerCell))
+    }
     datThis=snacsObj$mut[i,j]; hashesThis=snacsObj$hashes[,j]; annCellThis=snacsObj$annCell[j,]; annSNPthis=snacsObj$annSNP[i,]
-    rm(propMissPerCell)
+    rm(propMissPerCellVec)
     
-    propMissPerSNP <- apply(datThis,1,function(x) sum(is.na(x)))/ncol(datThis)
+    propMissPerSNPvec <- apply(datThis,1,function(x) sum(is.na(x)))/ncol(datThis)
     if (verbose) {
         if (F) {
-            cat("\npropMissPerSNP")
-            print(summary(propMissPerSNP))
-            #save(propMissPerSNP,file=paste0(dirOutput,"propMissPerSNP_",snacsObj$exptName,".RData"))
-            grDevices::png(paste0(dirOutput,"propMissPerSNP_",snacsObj$exptName,".png"))
-            graphics::hist(propMissPerSNP,xlim=c(0,1),main=snacsObj$exptName,xlab="Proportion missing in a SNP",ylab="Count",breaks=100)
+            cat("\npropMissPerSNPvec")
+            print(summary(propMissPerSNPvec))
+            #save(propMissPerSNPvec,file=paste0(dirOutput,"propMissPerSNPvec_",snacsObj$exptName,".RData"))
+            grDevices::png(paste0(dirOutput,"propMissPerSNPvec_",snacsObj$exptName,".png"))
+            graphics::hist(propMissPerSNPvec,xlim=c(0,1),main=snacsObj$exptName,xlab="Proportion missing in a SNP",ylab="Count",breaks=100)
             grDevices::dev.off()
         }
     }
-    i=which(propMissPerSNP<0.4); j=1:nrow(annCellThis)
+    i=which(propMissPerSNPvec<proportionMissingPerSNP); j=1:nrow(annCellThis)
+    if (length(i)<10) {
+        cat("\nProportion missing per SNP:\n")
+        print(round(summary(proportionMissingPerSNP),2))
+        stop(paste0("Not enough SNPs having proportion missing below ",proportionMissingPerSNP))
+    }
     datThis=datThis[i,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]; annSNPthis=annSNPthis[i,]
-    rm(propMissPerSNP)
+    rm(propMissPerSNPvec)
     
-    #propMutPerSNP <- apply(datThis,1,sum,na.rm=TRUE)/ncol(datThis)
-    propMutPerSNP <- apply(datThis,1,function(x) {mean(x==1,na.rm=T)})
+    #propMutPerSNPvec <- apply(datThis,1,sum,na.rm=TRUE)/ncol(datThis)
+    propMutPerSNPvec <- apply(datThis,1,function(x) {mean(x==1,na.rm=T)})
     if (verbose) {
         if (F) {
-            cat("\npropMutPerSNP")
-            print(summary(propMutPerSNP))
+            cat("\npropMutPerSNPvec")
+            print(summary(propMutPerSNPvec))
         }
     }
-    i=which(propMutPerSNP>=0.1 & propMutPerSNP<=0.8); j=1:nrow(annCellThis)
+    i=which(propMutPerSNPvec>=proportionMutatedPerSNP[1] & propMutPerSNPvec<=proportionMutatedPerSNP[2]); j=1:nrow(annCellThis)
+    if (length(i)<10) {
+        cat("\nProportion mutated per SNP:\n")
+        print(round(summary(propMutPerSNPvec),2))
+        stop(paste0("Not enough SNPs having proportion mutated in the range ",paste(proportionMutatedPerSNP,collapse=" - ")))
+    }
     datThis=datThis[i,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]; annSNPthis=annSNPthis[i,]
-    rm(propMutPerSNP)
+    rm(propMutPerSNPvec)
     
     if (verbose) {
         cat("\n Number of SNPs after filtering: ",nrow(datThis),"\n",sep="")
@@ -171,9 +207,14 @@ imputeMissingMutations=function(snacsObj,verbose=F) {
         rm(x)
     }
 
-    propMutPerCell=apply(datThis,2,function(x) mean(x==1,na.rm=T)); j=which(propMutPerCell>0 & propMutPerCell<1)
+    propMutPerCellVec=apply(datThis,2,function(x) mean(x==1,na.rm=T)); j=which(propMutPerCellVec>proportionMutatedPerCell[1] & propMutPerCellVec<proportionMutatedPerCell[2])
+    if (length(i)<10) {
+        cat("\nProportion mutated per cell:\n")
+        print(round(summary(propMutPerCellVec),2))
+        stop(paste0("Not enough cells having proportion mutated in the range ",paste(proportionMutatedPerCell,collapse=" - ")))
+    }
     datThis=datThis[,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]
-    rm(propMutPerCell)
+    rm(propMutPerCellVec)
 
     snacsObj[["mut"]]=datThis
     snacsObj[["hashes"]]=hashesThis

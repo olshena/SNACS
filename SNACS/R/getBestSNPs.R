@@ -182,7 +182,7 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
             annSNPthis=annSNPthis[i,]
         }
     }
-        
+    
     ################################################
     j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
     datThis=datThis[,j]

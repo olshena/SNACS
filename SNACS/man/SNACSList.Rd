@@ -10,6 +10,7 @@ SNACSList(
   exptName,
   annCell = NULL,
   annSNP = NULL,
+  annHash = NULL,
   hashColors = NULL
 )
 }
@@ -23,6 +24,8 @@ SNACSList(
 \item{annCell}{Data frame of cell annotation}
 
 \item{annSNP}{Data frame of SNP annotation}
+
+\item{annHash}{Data frame of hash annotation}
 
 \item{hashColors}{Colors of the hashes}
 }
