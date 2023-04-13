@@ -12,7 +12,8 @@ makeHashCall(
   cellProportionAboveBackgnd = 0.5,
   minClustSize = 10,
   clustComparePValue = 10^-5,
-  maxClustSampleSize = 5000
+  maxClustSampleSize = Inf,
+  clustCompareMethod = c("t", "hotelling")
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ makeHashCall(
 \item{clustComparePValue}{P-value threshold to compare cluster pairs}
 
 \item{maxClustSampleSize}{Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000}
+
+\item{clustCompareMethod}{Test used to compare clusters. Default is t-test}
 }
 \value{
 A SNACSList object

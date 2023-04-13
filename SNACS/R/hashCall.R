@@ -12,13 +12,16 @@
 #' @param minClustSize Minimum number of cells required to be in a cluster. Default is 10
 #' @param clustComparePValue P-value threshold to compare cluster pairs
 #' @param maxClustSampleSize Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000
+#' @param clustCompareMethod Test used to compare clusters. Default is t-test
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,clustComparePValue=10^-5,maxClustSampleSize=5000) {
+makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling")) {
 
-    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; cellProportionAboveBackgnd=0.5; minClustSize=10; clustComparePValue=10^-5
-    #minClustSize=2; clustComparePValue=0.05; maxClustSampleSize=5000
+    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; cellProportionAboveBackgnd=0.5; minClustSize=10; clustComparePValue=10^-5; clustCompareMethod="t"
+    #minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf
 
+    ## -----------------------------------
+    clustCompareMethod=clustCompareMethod[1]
     ## -----------------------------------
     if (F) {
         subsetCellFlag=""
@@ -141,8 +144,18 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
                         grpThis=grpThis[j]
                     }
                     j=match(names(grpThis),clustInfoThis$id)
-                    res=DescTools::HotellingsT2Test(cd45MatThis[j,]~grpThis)
-                    if (res$p.value>=clustComparePValue) {
+                    if (clustCompareMethod=="hotelling") {
+                        res=DescTools::HotellingsT2Test(cd45MatThis[j,]~grpThis)
+                        pv=res$p.value
+                    } else {
+                        pv=rep(NA,ncol(cd45MatThis))
+                        for (k in 1:ncol(cd45MatThis)) {
+                            res=stats::t.test(cd45MatThis[j,k]~grpThis,var.equal=TRUE)
+                            pv[k]=res$p.value
+                        }
+                        pv=min(pv*ncol(cd45MatThis))
+                    }
+                    if (pv>=clustComparePValue) {
                         if (is.na(value[j1[1]])) value[j1]=paste0(hId,"_",gId1)
                         value[j2]=paste0(hId,"_",gId2)
                         next
