@@ -11,6 +11,8 @@ makeHashCall(
   cellProportionForModeDetection = 0.75,
   cellProportionAboveBackgnd = 0.5,
   minClustSize = 10,
+  minClustSizeRnd2 = Inf,
+  backgndThresRnd2 = 0.75,
   clustComparePValue = 10^-5,
   maxClustSampleSize = Inf,
   clustCompareMethod = c("t", "hotelling")
@@ -28,6 +30,10 @@ makeHashCall(
 \item{cellProportionAboveBackgnd}{Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1}
 
 \item{minClustSize}{Minimum number of cells required to be in a cluster. Default is 10}
+
+\item{minClustSizeRnd2}{Minimum number of cells required to be in a cluster for making second round of hash calls. Inf means the second round is not run. Default is Inf}
+
+\item{backgndThresRnd2}{Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1}
 
 \item{clustComparePValue}{P-value threshold to compare cluster pairs}
 

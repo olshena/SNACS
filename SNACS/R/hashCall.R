@@ -10,28 +10,19 @@
 #' @param cellProportionBelowBackgndMode Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
 #' @param minClustSize Minimum number of cells required to be in a cluster. Default is 10
+#' @param minClustSizeRnd2 Minimum number of cells required to be in a cluster for making second round of hash calls. Inf means the second round is not run. Default is Inf
+#' @param backgndThresRnd2 Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1
 #' @param clustComparePValue P-value threshold to compare cluster pairs
 #' @param maxClustSampleSize Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000
 #' @param clustCompareMethod Test used to compare clusters. Default is t-test
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling")) {
-
-    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; cellProportionAboveBackgnd=0.5; minClustSize=10; clustComparePValue=10^-5; clustCompareMethod="t"
-    #minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf
+makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,minClustSizeRnd2=Inf,backgndThresRnd2=0.75,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling")) {
 
     ## -----------------------------------
     clustCompareMethod=clustCompareMethod[1]
     ## -----------------------------------
-    if (F) {
-        subsetCellFlag=""
-        
-        dirData=paste0("../heatmap/",subsetCellFlag,"/")
-        fName=paste0("_pvBest_ann_hashCall_mclustDallCall_",snacsObj$exptName)
-        fName=paste0(subsetCellFlag,"_pvBest_ann_hashCall_",snacsObj$exptName)
-        fName=paste0(subsetCellFlag,"_pvBest_ann_",snacsObj$exptName)
-        load(file=paste0(dirData,"clustObj",fName,".RData"))
-    }
+    
     clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
     clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
 
@@ -69,7 +60,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
             hashMat[,k]=xAll
         }
     }
-    hashBackgnd=matrix(nrow=3,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres"),snacsObj$annHash$hashNames))
+    hashBackgnd=matrix(nrow=4,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres","thresRnd2"),snacsObj$annHash$hashNames))
     for (k in 1:ncol(hashMat)) {
         x=stats::density(hashMat[,k],bw="SJ",na.rm=T)
         xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
@@ -82,7 +73,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
         hashBackgndECDF=stats::ecdf(hashBackgndData)
         x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
         ecdfbg=1-hashBackgndECDF(x2)
-        hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=backgndThreshold))
+        hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
     }
 
     clustInfo$cd45Clust="Doublet"
@@ -100,7 +91,6 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
         x=apply(hashMat[j,],2,mean,na.rm=T)
         clustInfo$cd45Clust[j]=names(x)[which.max(x)]
     }
-    x
     
     ###########################################################
     ###########################################################
@@ -150,7 +140,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
                     } else {
                         pv=rep(NA,ncol(cd45MatThis))
                         for (k in 1:ncol(cd45MatThis)) {
-                            res=stats::t.test(cd45MatThis[j,k]~grpThis,var.equal=TRUE)
+                            res=stats::t.test(cd45MatThis[j,k]~grpThis,var.equal=T)
                             pv[k]=res$p.value
                         }
                         pv=min(pv*ncol(cd45MatThis))
@@ -184,7 +174,8 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
         }
         cd45Clust[j]=paste(inHashes,collapse="_")
     }
-
+    
+    ## Mark cluster splits
     j=clustObjThis$order
     grp=as.integer(as.factor(x[j]))
     j=which(diff(grp)!=0)
@@ -199,6 +190,227 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
     }
     clustSplit=clustSplit[match(clustInfo$id,clustObjThis$label[clustObjThis$order])]
     subClust=x
+    
+    ## Distance to centroid
+    grp=cd45Clust
+    grpUniq=sort(unique(grp))
+    centroid=matrix(nrow=ncol(cd45MatThis),ncol=length(grpUniq),dimnames=list(colnames(cd45MatThis),grpUniq))
+    for (gId in 1:length(grpUniq)) {
+        j=which(grp==grpUniq[gId])
+        centroid[,gId]=apply(cd45MatThis[j,],2,mean,na.rm=T)
+    }
+    dist2centroidMat=matrix(nrow=length(grpUniq),ncol=nrow(cd45MatThis),dimnames=list(grpUniq,rownames(cd45MatThis)))
+    j=which(grp%in%colnames(cd45MatThis))
+    j=1:nrow(cd45MatThis)
+    for (gId in 1:length(grpUniq)) {
+        dist2centroidMat[gId,j]=apply(cd45MatThis[j,],1,function(x,centroid) {sum((x-centroid)^2)},centroid=centroid[,gId])
+    }
+    if (F) {
+        ## Singleton based on distance to centroid
+        
+        singletonThreshold=Inf
+
+        cd45Clust2=cd45Clust
+        if (all(singletonThreshold>=0) & all(singletonThreshold<=1)) {
+            thres=rep(NA,length(snacsObj$annHash$hashNames)); names(thres)=snacsObj$annHash$hashNames
+            for (hashId in snacsObj$annHash$hashNames) {
+                j=which(grp==hashId)
+                thres[hashId]=stats::quantile(dist2centroidMat[hashId,j],probs=singletonThreshold[2])
+            }
+            hashId2=grpUniq[!grpUniq%in%snacsObj$annHash$hashNames]
+            thresDoub=rep(NA,length(hashId2)); names(thresDoub)=hashId2
+            for (hashId in names(thresDoub)) {
+                j=which(grp==hashId)
+                thresDoub[hashId]=stats::quantile(dist2centroidMat[hashId,j],probs=singletonThreshold[1])
+            }
+            grp2=cd45Clust
+            for (hashId in snacsObj$annHash$hashNames) {
+                if (F) {
+                    j=which(grp==hashId)
+                    for (hashId2 in names(thresDoub)) {
+                        thresDoub[hashId]=stats::quantile(dist2centroidMat[hashId2,j],probs=singletonThreshold[1])
+                    }
+                }
+                j1=which(dist2centroidMat[hashId,]>thres[hashId] & grp==hashId)
+                #j1=which(grp==hashId)
+                if (length(j1)!=0) {
+                    inHashes=c()
+                    for (hashId2 in names(thresDoub)) {
+                        j=which(dist2centroidMat[hashId2,j1]<=thresDoub[hashId2])
+                        if (length(j)!=0) {
+                            j=j1[j]
+                            inHashes=c(inHashes,strsplit(hashId2,"_")[[1]])
+                        }
+                        grp2[j]=paste(sort(unique(inHashes)),collapse="_")
+                    }
+                }
+            }
+            cd45Clust2=grp2
+            #table(cd45Clust,cd45Clust2,exclude=NULL)
+        }
+    }
+    
+    if (F) {
+        ## Singleton based on hash value
+        if (all(singletonThreshold>=0) & all(singletonThreshold<=1)) {
+            thres=matrix(rep(NA,2*nrow(snacsObj$annHash)),ncol=2); rownames(thres)=snacsObj$annHash$hashNames; colnames(thres)=c("high","low")
+            for (hashId in snacsObj$annHash$hashNames) {
+                j=which(cd45MatThis[,hashId]>hashBackgnd["thres",hashId])
+                thres[hashId,"high"]=stats::quantile(cd45MatThis[j,hashId],probs=singletonThreshold["high"])
+                thres[hashId,"low"]=stats::quantile(cd45MatThis[j,hashId],probs=singletonThreshold["low"])
+            }
+            for (hashId in snacsObj$annHash$hashNames) {
+                j=which(cd45MatThis[,hashId]>=thres[hashId,"high"])
+                for (hashId2 in snacsObj$annHash$hashNames[snacsObj$annHash$hashNames!=hashId]) {
+                    j=j[which(cd45MatThis[j,hashId2]<thres[hashId2,"low"])]
+                }
+                if (length(j)!=0) {
+                    #for (jj in j) cd45Clust[jj]=paste(sort(unique(c(strsplit(cd45Clust[jj],"_")[[1]],hashId))),collapse="_")
+                    cd45Clust[j]=hashId
+                }
+            }
+        }
+    }
+
+    ## Narrow regions
+    if (is.finite(minClustSizeRnd2)) {
+        cellId=which(cd45Clust%in%snacsObj$annHash$hashNames)
+        if (F) {
+            ## Splits based on hclust
+
+            value=rep(NA,length(cellId))
+            grpHigher=stats::cutree(clustObjThis,k=1); grpHigher=grpHigher[cellId]
+            for (hId in 2:(length(heightUniq)-1)) {
+                atHeight=heightUniq[hId]
+                hashClust=stats::cutree(clustObjThis,h=atHeight)
+                grp=hashClust; grp=grp[cellId]
+                x=table(grp)
+                if (all(x>minClustSizeRnd2)) next
+                if (all(x<minClustSize)) break
+                grpUniq=sort(unique(grp))
+                #if (length(grpUniq)>1 & any(is.na(value))) {
+                if (length(grpUniq)>1) {
+                    for (gId1 in 1:(length(grpUniq)-1)) {
+                        j1=which(grp==grpUniq[gId1])
+                        if (length(j1)<minClustSize) next
+                        #if (length(j1)<minClustSizeRnd2) next
+                        for (gId2 in (gId1+1):length(grpUniq)) {
+                            j2=which(grp==grpUniq[gId2])
+                            #if (!is.na(value[j2[1]])) next
+                            if (length(j2)<minClustSize) {
+                            #if (length(j2)<minClustSizeRnd2) {
+                                #if (is.na(value[j1[1]])) value[j1]=paste0(hId,"_",gId1)
+                                #value[j2]=paste0(hId,"_",gId2)
+                                next
+                            }
+                            grpThis=grp[grp%in%grpUniq[c(gId1,gId2)]]
+                            if (length(j)>maxClustSampleSize) {
+                                set.seed(12345); j=sample(1:length(grpThis),maxClustSampleSize,replace=FALSE)
+                                grpThis=grpThis[j]
+                            }
+                            j=match(names(grpThis),clustInfoThis$id)
+                            if (clustCompareMethod=="hotelling") {
+                                res=DescTools::HotellingsT2Test(cd45MatThis[j,]~grpThis)
+                                pv=res$p.value
+                            } else {
+                                pv=rep(NA,ncol(cd45MatThis))
+                                for (k in 1:ncol(cd45MatThis)) {
+                                    res=stats::t.test(cd45MatThis[j,k]~grpThis,var.equal=T)
+                                    pv[k]=res$p.value
+                                }
+                                pv=min(pv*ncol(cd45MatThis))
+                            }
+                            #if (pv>=clustComparePValue) {
+                            if (pv<clustComparePValue) {
+                                #if (is.na(value[j1[1]])) value[j1]=paste0(hId,"_",gId1)
+                                value[j1]=paste0(hId,"_",gId1)
+                                value[j2]=paste0(hId,"_",gId2)
+                                next
+                            }
+                        }
+                    }
+                }
+            }
+            #valueOrig=paste0(hId,"_",grp,"_orig")
+            #j=which(is.na(value))
+            #if (length(j)!=0) value[j]=valueOrig[j]
+            table(value,exclude=NULL)
+            x=value
+        }
+
+        if (F) {
+            ## Splits based on genotype
+            x=as.character(snacsObj$mut[1,])
+            if (nrow(snacsObj$mut)>1) {
+                for (i in 2:nrow(snacsObj$mut)) {
+                    x=paste(x,snacsObj$mut[i,])
+                }
+            }
+            x=x[cellId]
+        }
+        if (T) {
+            ## Splits based on cbs
+            #x1=cd45MatThis[clustObjThis$order,]
+            x1=t(dist2centroidMat[,clustObjThis$order])
+            x2 <- DNAcopy::CNA(genomdat=x1,
+            chrom=rep(1,nrow(x1)),maploc=1:nrow(x1),
+                              data.type="logratio",sampleid=colnames(x1))
+            x3 <- DNAcopy::segment(x2,alpha=0.1,verbose=0)
+            x3=x3$output
+            x=rep(NA,nrow(x1))
+            names(x)=clustObjThis$label[clustObjThis$order]
+            grp=cd45Clust[clustObjThis$order]
+            grpUniq=snacsObj$annHash$hashNames
+            for (gId in 1:length(grpUniq)) {
+                j1=range(which(grp==grpUniq[gId]))
+                x2=rep(NA,nrow(x1))
+                p1=1
+                for (k in which(x3$ID==grpUniq[gId])) {
+                    x2[x3$loc.start[k]:x3$loc.end[k]]=p1
+                    p1=p1+1
+                }
+                x[j1[1]:j1[2]]=paste0(grpUniq[gId],"_",x2[j1[1]:j1[2]])
+            }
+            x=x[match(clustObjThis$label,names(x))]
+            x=x[cellId]
+
+        }
+
+        grp=cd45Clust
+        #x[is.na(x)]="0"
+        for (k in unique(x[!is.na(x)])) {
+            j=cellId[which(x==k)]
+            if (length(j)>minClustSizeRnd2) next
+            inHashes=c()
+            for (hashId in snacsObj$annHash$hashNames) {
+                if (round(mean(cd45MatThis[j,hashId]>hashBackgnd["thresRnd2",hashId]),2)>=cellProportionAboveBackgnd) {inHashes=c(inHashes,hashId)}
+            }
+            #if (length(inHashes)>1) grp[j]=paste(inHashes,collapse="_")
+            grp[j]=paste(inHashes,collapse="_")
+        }
+        cd45Clust2=grp
+
+        ## Mark cluster splits
+        cellId=1:nrow(clustInfoThis)
+        #z1=cutree(clustObjThis,k=80)
+        #z1=rep("0",length(cd45Clust)); z1[cellId]=subClust
+        cellId=which(cd45Clust%in%snacsObj$annHash$hashNames)
+        z1=rep("0",length(cd45Clust)); z1[cellId]=x
+        j=clustObjThis$order
+        grp=as.integer(as.factor(z1[j]))
+        j=which(diff(grp)!=0)
+        jj=j
+        j1=c(1,j+1); j2=c(j,length(grp))
+        for (j in 1:length(j1)) {
+            if (any(grp[j1[j]:j2[j]]!=grp[j1[j]])) print(j)
+        }
+        clustSplitRnd2=rep(1,length(grp))
+        for (j in 1:length(j1)) {
+            if (j%%2==0) clustSplitRnd2[j1[j]:j2[j]]=2
+        }
+        clustSplitRnd2=clustSplitRnd2[match(clustInfo$id,clustObjThis$label[clustObjThis$order])]
+        subClustRnd2=z1
+    }
 
     ###########################################################
     ###########################################################
@@ -209,7 +421,16 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
     snacsObj$annCell$hashCall[snacsObj$hashCall==""]=NA
     snacsObj$annCell$clustSplit=clustSplit
     snacsObj$annCell$subClust=subClust
-
+    snacsObj$centroid=centroid
+    snacsObj$dist2centroidMat=dist2centroidMat
+    if (is.finite(minClustSizeRnd2)) {
+        snacsObj$annCell$hashCallRnd2[j2]=cd45Clust2[j1]
+        snacsObj$annCell$hashCallRnd2[snacsObj$hashCallRnd2==""]=NA
+        snacsObj$annCell$clustSplitRnd2=clustSplitRnd2
+        snacsObj$annCell$subClustRnd2=subClustRnd2
+    }
+    #print(table(duplicated(snacsObj$annCell$subClustRnd2)))
+    
     cat('"hashCall" column added to "annCell" table in SNACS object\n',sep="")
     
     cat("\n")
