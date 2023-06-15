@@ -10,7 +10,7 @@ makeHashCall(
   cellProportionBelowBackgndMode = 0.6,
   cellProportionForModeDetection = 0.75,
   cellProportionAboveBackgnd = 0.5,
-  minClustSize = 10,
+  minClustSize = 2,
   minClustSizeRnd2 = Inf,
   backgndThresRnd2 = 0.75,
   clustComparePValue = 10^-5,
@@ -29,7 +29,7 @@ makeHashCall(
 
 \item{cellProportionAboveBackgnd}{Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1}
 
-\item{minClustSize}{Minimum number of cells required to be in a cluster. Default is 10}
+\item{minClustSize}{Minimum number of cells required to be in a cluster. Default is 2}
 
 \item{minClustSizeRnd2}{Minimum number of cells required to be in a cluster for making second round of hash calls. Inf means the second round is not run. Default is Inf}
 
