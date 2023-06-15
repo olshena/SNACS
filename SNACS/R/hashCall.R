@@ -9,7 +9,7 @@
 #' @param cellProportionAboveBackgnd Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
 #' @param cellProportionBelowBackgndMode Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
-#' @param minClustSize Minimum number of cells required to be in a cluster. Default is 10
+#' @param minClustSize Minimum number of cells required to be in a cluster. Default is 2
 #' @param minClustSizeRnd2 Minimum number of cells required to be in a cluster for making second round of hash calls. Inf means the second round is not run. Default is Inf
 #' @param backgndThresRnd2 Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1
 #' @param clustComparePValue P-value threshold to compare cluster pairs
@@ -17,7 +17,7 @@
 #' @param clustCompareMethod Test used to compare clusters. Default is t-test
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=10,minClustSizeRnd2=Inf,backgndThresRnd2=0.75,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling")) {
+makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=2,minClustSizeRnd2=Inf,backgndThresRnd2=0.75,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling")) {
 
     ## -----------------------------------
     clustCompareMethod=clustCompareMethod[1]
