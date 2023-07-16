@@ -8,7 +8,7 @@ getBestSNPs.internal(
   snacsObj,
   cell_anno_var,
   clustMethod = c("hclust", "skmean"),
-  pvSnpThres = 0,
+  pvSnpThres = 10^-320,
   outputFormat = c("", "pdf", "png")
 )
 }

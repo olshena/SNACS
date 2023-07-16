@@ -12,7 +12,7 @@
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @return A SNACSList object
 #' @export
-getBestSNPs=function(snacsObj,cell_anno_var=NULL,clustMethodForRankedSNPs=c("hclust","skmean"),clustMethodForBestSNPs=c("hclust","skmean"),pvSnpThres=0,outputFormat=c("","pdf","png")) {
+getBestSNPs=function(snacsObj,cell_anno_var=NULL,clustMethodForRankedSNPs=c("hclust","skmean"),clustMethodForBestSNPs=c("hclust","skmean"),pvSnpThres=10^-320,outputFormat=c("","pdf","png")) {
     if (is.null(cell_anno_var)) cell_anno_var_rankedSNPs=snacsObj$annHash$hashNames
     cell_anno_var_bestSNPs=c(cell_anno_var_rankedSNPs,paste0("clustRankedSNPs_",clustMethodForRankedSNPs[1]))
     snacsObj=getRankedSNPs.internal(snacsObj,cell_anno_var=cell_anno_var_rankedSNPs,clustMethod=clustMethodForRankedSNPs,outputFormat=outputFormat)
@@ -225,7 +225,7 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @return A SNACSList object
 #' @export
-getBestSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","skmean"),pvSnpThres=0,outputFormat=c("","pdf","png")) {
+getBestSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","skmean"),pvSnpThres=10^-320,outputFormat=c("","pdf","png")) {
     
     #snacsObj=snacsObj; cell_anno_var=c(snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"); pvSnpThres=0.05
 

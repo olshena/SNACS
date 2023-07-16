@@ -9,7 +9,7 @@ getBestSNPs(
   cell_anno_var = NULL,
   clustMethodForRankedSNPs = c("hclust", "skmean"),
   clustMethodForBestSNPs = c("hclust", "skmean"),
-  pvSnpThres = 0,
+  pvSnpThres = 10^-320,
   outputFormat = c("", "pdf", "png")
 )
 }
