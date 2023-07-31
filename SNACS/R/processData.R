@@ -16,7 +16,7 @@
 SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,annHash=NULL,hashColors=NULL) {
     
     if (!is.matrix(mut)) stop("mut has to be a matrix of 0s and 1s")
-    if (!any(mut%in%c(0,1))) stop("mut has to be a matrix of 0s and 1s")
+    if (!is.numeric(mut[1,1]) | !all(c(0,1)%in%mut) | any(!mut[!is.na(mut)]%in%c(0,1))) stop("mut has to be a matrix of 0s and 1s")
     if (ncol(mut)!=ncol(hashes)) stop("hashes has to be matrix with each row represeting a hash and each column a cells")
     #if ("id"%in%names(annSNP)) warning("Replacing column id in annSNP with generated SNP IDs")
     #if ("id"%in%names(annCell)) warning("Replacing column id in annCell with generated cell IDs")
