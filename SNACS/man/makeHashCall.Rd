@@ -15,7 +15,10 @@ makeHashCall(
   backgndThresRnd2 = 0.75,
   clustComparePValue = 10^-5,
   maxClustSampleSize = Inf,
-  clustCompareMethod = c("t", "hotelling")
+  clustCompareMethod = c("t", "hotelling"),
+  dataTypeRnd2 = c("euclidean", "sum of squares", "log2 euclidean",
+    "log2 sum of squares"),
+  cbsAlpha = 0.1
 )
 }
 \arguments{
@@ -40,6 +43,10 @@ makeHashCall(
 \item{maxClustSampleSize}{Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000}
 
 \item{clustCompareMethod}{Test used to compare clusters. Default is t-test}
+
+\item{dataTypeRnd2}{Type of data to be used for splitting the cells when making second round of hash calls. Default is euclidean distance of the cells to the cluster means from first round of hash calls}
+
+\item{cbsAlpha}{Significance level passed to DNAcopy::segment to for splitting the cells when making second round of hash calls. Default os 0.1}
 }
 \value{
 A SNACSList object

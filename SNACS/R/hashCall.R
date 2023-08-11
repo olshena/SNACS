@@ -15,12 +15,15 @@
 #' @param clustComparePValue P-value threshold to compare cluster pairs
 #' @param maxClustSampleSize Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000
 #' @param clustCompareMethod Test used to compare clusters. Default is t-test
+#' @param dataTypeRnd2 Type of data to be used for splitting the cells when making second round of hash calls. Default is euclidean distance of the cells to the cluster means from first round of hash calls
+#' @param cbsAlpha Significance level passed to DNAcopy::segment to for splitting the cells when making second round of hash calls. Default os 0.1
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=2,minClustSizeRnd2=Inf,backgndThresRnd2=0.75,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling")) {
+makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=2,minClustSizeRnd2=Inf,backgndThresRnd2=0.75,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
 
     ## -----------------------------------
     clustCompareMethod=clustCompareMethod[1]
+    dataTypeRnd2=dataTypeRnd2[1]
     ## -----------------------------------
     
     clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
@@ -205,6 +208,12 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
     for (gId in 1:length(grpUniq)) {
         dist2centroidMat[gId,j]=apply(cd45MatThis[j,],1,function(x,centroid) {sum((x-centroid)^2)},centroid=centroid[,gId])
     }
+    switch(dataTypeRnd2,
+        "euclidean"={dist2centroidMat=sqrt(dist2centroidMat)},
+        "log2 sum of squares"={dist2centroidMat=log2(dist2centroidMat)},
+        "log2 euclidean"={dist2centroidMat=log2(sqrt(dist2centroidMat))}
+    )
+
     if (F) {
         ## Singleton based on distance to centroid
         
@@ -355,7 +364,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
             x2 <- DNAcopy::CNA(genomdat=x1,
             chrom=rep(1,nrow(x1)),maploc=1:nrow(x1),
                               data.type="logratio",sampleid=colnames(x1))
-            x3 <- DNAcopy::segment(x2,alpha=0.1,verbose=0)
+            x3 <- DNAcopy::segment(x2,alpha=cbsAlpha,verbose=0)
             x3=x3$output
             x=rep(NA,nrow(x1))
             names(x)=clustObjThis$label[clustObjThis$order]
