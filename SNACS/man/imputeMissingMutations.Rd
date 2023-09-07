@@ -4,12 +4,12 @@
 \alias{imputeMissingMutations}
 \title{Imputes missing mutations in SNACSList object.}
 \usage{
-imputeMissingMutations(snacsObj, verbose = F)
+imputeMissingMutations(snacsObj, verbose = FALSE)
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{verbose}{Prints information when running the method}
+\item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }
 \value{
 A SNACSList object

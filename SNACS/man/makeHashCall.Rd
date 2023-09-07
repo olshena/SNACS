@@ -41,7 +41,7 @@ makeHashCall(
 
 \item{clustCompareMethod}{Character. Test used to compare clusters. Default is t-test}
 
-\item{makeHashCallRnd2}{Make second round of hash call to detect narrow multiplet regions. Default is TRUE}
+\item{makeHashCallRnd2}{Logical. Make second round of hash call to detect narrow multiplet regions. Default is TRUE}
 
 \item{minClustSizeRnd2}{Integer. Minimum number of cells required to be in a cluster for making second round of hash calls. Default is 100}
 

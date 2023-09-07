@@ -27,7 +27,7 @@ SNACSList(
 
 \item{annHash}{Data frame. Table of hash annotation. Default is NULL}
 
-\item{hashColors}{Colors of the hashes. Default is NULL}
+\item{hashColors}{Character vector. hashColors Colors of the hashes. Default is NULL}
 }
 \value{
 A SNACSList object

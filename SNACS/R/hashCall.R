@@ -13,7 +13,7 @@
 #' @param clustComparePValue Numeric. P-value threshold to compare cluster pairs. Default is 10^-5
 #' @param maxClustSampleSize Numeric. Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is Inf
 #' @param clustCompareMethod Character. Test used to compare clusters. Default is t-test
-#' @param makeHashCallRnd2 Make second round of hash call to detect narrow multiplet regions. Default is TRUE
+#' @param makeHashCallRnd2 Logical. Make second round of hash call to detect narrow multiplet regions. Default is TRUE
 #' @param minClustSizeRnd2 Integer. Minimum number of cells required to be in a cluster for making second round of hash calls. Default is 100
 #' @param backgndThresRnd2 Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1
 #' @param dataTypeRnd2 Character. Type of data to be used for splitting the cells when making second round of hash calls. Default is euclidean distance of the cells to the cluster means from first round of hash calls
@@ -423,9 +423,9 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
 
 #'
 #' @param snacsObj SNACSList object
-#' @param backgndThreshold Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
-#' @param cellProportionBelowBackgndMode Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
-#' @param cellProportionForModeDetection Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
+#' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
+#' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
+#' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @export
 generateHashDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {

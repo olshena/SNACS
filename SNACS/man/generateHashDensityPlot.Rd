@@ -15,11 +15,11 @@ generateHashDensityPlot(
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{backgndThreshold}{Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
+\item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
 
-\item{cellProportionBelowBackgndMode}{Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
+\item{cellProportionBelowBackgndMode}{Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
 
-\item{cellProportionForModeDetection}{Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
+\item{cellProportionForModeDetection}{Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
 
 \item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
 }

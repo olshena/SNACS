@@ -10,7 +10,7 @@
 #' @param annCell Data frame. Table of cell annotation. Default is NULL
 #' @param annSNP Data frame. Table of SNP annotation. Default is NULL
 #' @param annHash Data frame. Table of hash annotation. Default is NULL
-#' @param hashColors Colors of the hashes. Default is NULL
+#' @param hashColors Character vector. hashColors Colors of the hashes. Default is NULL
 #' @return A SNACSList object
 #' @export
 SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,annHash=NULL,hashColors=NULL) {
@@ -185,10 +185,10 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
 #' Imputes missing mutations in SNACSList object.
 #'
 #' @param snacsObj SNACSList object
-#' @param verbose Prints information when running the method
+#' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-imputeMissingMutations=function(snacsObj,verbose=F) {
+imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     timeStamp=Sys.time()
 
     if (!is.na(match("filtered",snacsObj[["processLevels"]]))) stop("Run filterData() before imputing data\n")
