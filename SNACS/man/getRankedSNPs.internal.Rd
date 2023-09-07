@@ -14,7 +14,7 @@ getRankedSNPs.internal(
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{cell_anno_var}{Optional character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL}
+\item{cell_anno_var}{Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL}
 
 \item{clustMethod}{Character. Clustering method for ranking SNPs. Options are "hclust" and "skmean". Default is "hclust"}
 

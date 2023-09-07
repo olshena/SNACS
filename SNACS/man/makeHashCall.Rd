@@ -11,11 +11,12 @@ makeHashCall(
   cellProportionForModeDetection = 0.75,
   cellProportionAboveBackgnd = 0.5,
   minClustSize = 2,
-  minClustSizeRnd2 = Inf,
-  backgndThresRnd2 = 0.75,
   clustComparePValue = 10^-5,
   maxClustSampleSize = Inf,
   clustCompareMethod = c("t", "hotelling"),
+  makeHashCallRnd2 = TRUE,
+  minClustSizeRnd2 = 100,
+  backgndThresRnd2 = 0.75,
   dataTypeRnd2 = c("euclidean", "sum of squares", "log2 euclidean",
     "log2 sum of squares"),
   cbsAlpha = 0.1
@@ -24,33 +25,35 @@ makeHashCall(
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{backgndThreshold}{Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
+\item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
 
-\item{cellProportionBelowBackgndMode}{Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
+\item{cellProportionBelowBackgndMode}{Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
 
-\item{cellProportionForModeDetection}{Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
+\item{cellProportionForModeDetection}{Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
 
-\item{cellProportionAboveBackgnd}{Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1}
+\item{cellProportionAboveBackgnd}{Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1}
 
-\item{minClustSize}{Minimum number of cells required to be in a cluster. Default is 2}
+\item{minClustSize}{Numeric. Minimum number of cells required to be in a cluster. Default is 2}
 
-\item{minClustSizeRnd2}{Minimum number of cells required to be in a cluster for making second round of hash calls. Inf means the second round is not run. Default is Inf}
+\item{clustComparePValue}{Numeric. P-value threshold to compare cluster pairs. Default is 10^-5}
 
-\item{backgndThresRnd2}{Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1}
+\item{maxClustSampleSize}{Numeric. Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is Inf}
 
-\item{clustComparePValue}{P-value threshold to compare cluster pairs}
+\item{clustCompareMethod}{Character. Test used to compare clusters. Default is t-test}
 
-\item{maxClustSampleSize}{Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is 5000}
+\item{makeHashCallRnd2}{Make second round of hash call to detect narrow multiplet regions. Default is TRUE}
 
-\item{clustCompareMethod}{Test used to compare clusters. Default is t-test}
+\item{minClustSizeRnd2}{Integer. Minimum number of cells required to be in a cluster for making second round of hash calls. Default is 100}
 
-\item{dataTypeRnd2}{Type of data to be used for splitting the cells when making second round of hash calls. Default is euclidean distance of the cells to the cluster means from first round of hash calls}
+\item{backgndThresRnd2}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1}
 
-\item{cbsAlpha}{Significance level passed to DNAcopy::segment to for splitting the cells when making second round of hash calls. Default os 0.1}
+\item{dataTypeRnd2}{Character. Type of data to be used for splitting the cells when making second round of hash calls. Default is euclidean distance of the cells to the cluster means from first round of hash calls}
+
+\item{cbsAlpha}{Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of hash calls. Default is 0.1}
 }
 \value{
 A SNACSList object
 }
 \description{
-Make hash calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the hash IDs or called a "Doublet" when it is a mixture of hashes. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background for that hash. The empirical background distribution of a hash antibody is estimated by taking the background mode of the data and generating an empirical symmetric distribution around it. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops it reaches a minimum number of cells.
+Make hash calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the hash IDs or called a multiplet when it is a mixture of hashes. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background for that hash. The empirical background distribution of a hash antibody is estimated by taking the background mode of the data and generating an empirical symmetric distribution around it. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops it reaches a minimum number of cells.
 }

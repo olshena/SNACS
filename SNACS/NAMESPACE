@@ -3,6 +3,7 @@
 S3method(print,SNACSList)
 export(SNACSList)
 export(createHeatmap)
+export(filterData)
 export(generateHashDensityPlot)
 export(getBestSNPs)
 export(getBestSNPs.internal)

@@ -15,19 +15,19 @@ SNACSList(
 )
 }
 \arguments{
-\item{mut}{Matrix having mutation status as 0s and 1s}
+\item{mut}{Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns  cells}
 
-\item{hashes}{Matrix having hash values as numeric data}
+\item{hashes}{Numeric matrix. Matrix having hash values as numeric data. Rows depict hashes and columns cells}
 
-\item{exptName}{Experiment name}
+\item{exptName}{Character. Experiment name}
 
-\item{annCell}{Data frame of cell annotation}
+\item{annCell}{Data frame. Table of cell annotation. Default is NULL}
 
-\item{annSNP}{Data frame of SNP annotation}
+\item{annSNP}{Data frame. Table of SNP annotation. Default is NULL}
 
-\item{annHash}{Data frame of hash annotation}
+\item{annHash}{Data frame. Table of hash annotation. Default is NULL}
 
-\item{hashColors}{Colors of the hashes}
+\item{hashColors}{Colors of the hashes. Default is NULL}
 }
 \value{
 A SNACSList object

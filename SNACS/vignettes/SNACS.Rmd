@@ -51,7 +51,7 @@ SNACS stores data in a simple list-based data object called a SNACSList. The SNA
 
 ## Parameters mut, hashes, exptName are mandatory while hashColors is optional
 exptName <- "snacsExpt"
-hashColors <- c("green3","indianred2","dodgerblue3")
+hashColors <- c("indianred2","green3","dodgerblue3")
 
 snacsObj <- SNACSList(mut=mutMat,hashes=hashMat,exptName=exptName,hashColors=hashColors)
 snacsObj
@@ -97,7 +97,7 @@ generateHashDensityPlot(snacsObj)
 ```
 
 ## Make hash calls
-This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned the ID of one of the hashes or called a "Doublet" when it is a mixture of hashes. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background of that hash.
+This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned the ID of one of the hashes or called a multiplet when it is a mixture of hashes. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background of that hash.
 
 ```{r, echo = TRUE}
 
@@ -115,8 +115,8 @@ The parameter "outputFormat" can be used to save the heatmap in "pdf" or "png" f
 ```{r, fig.show = "hold", out.width = "50%", echo = TRUE}
 
 createHeatmap(snacsObj,
-   cell_anno_var=c("hashCall",snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"),
-   cell_anno_name=c("hash",snacsObj$annHash$hashNames,"cluster"),
+   cell_anno_var=c("hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"),
+   cell_anno_name=c("hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"cluster"),
    outputFormat="")
 
 ```

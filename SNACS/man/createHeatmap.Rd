@@ -11,14 +11,15 @@ createHeatmap(
   col_dend = T,
   row_dend = F,
   h_title = NULL,
-  outputfileName = "heatmap",
-  outputFormat = c("", "pdf", "png")
+  outputFileName = "heatmap",
+  outputFormat = c("", "pdf", "png"),
+  write2Table = F
 )
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{cell_anno_var}{Optional character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL}
+\item{cell_anno_var}{Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL}
 
 \item{cell_anno_name}{Character vector. Names of column color bars. Default is NULL}
 
@@ -26,11 +27,13 @@ createHeatmap(
 
 \item{row_dend}{Logical. Displays SNP dendrogram. Default is FALSE}
 
-\item{h_title}{string; gives the heatmap output a title; default is NULL.}
+\item{h_title}{Character. Gives the heatmap output a title. Default is NULL}
 
-\item{outputfileName}{Character. Output file name}
+\item{outputFileName}{Character. Output file name. Default is "heatmap"}
 
 \item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
+
+\item{write2Table}{Logical. Write the cell & SNP annotation tables ordered as in heatmap. Default is FALSE}
 }
 \value{
 A SNACSList object

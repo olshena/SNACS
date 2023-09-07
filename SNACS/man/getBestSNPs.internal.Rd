@@ -15,11 +15,11 @@ getBestSNPs.internal(
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{cell_anno_var}{Optional character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL}
+\item{cell_anno_var}{Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL}
 
 \item{clustMethod}{Character. Clustering method for selecting best SNPs. Options are "hclust" and "skmean". Default is "hclust"}
 
-\item{pvSnpThres}{P-value cutoff to select best SNPs}
+\item{pvSnpThres}{Numeric. P-value cutoff to select best SNPs. Default is 10^-320}
 
 \item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
 }
