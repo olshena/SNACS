@@ -118,7 +118,7 @@ print.SNACSList=function(x,...) {
 #' @return A SNACSList object
 #' @export
 filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSNP=0.4,proportionMutatedPerCell=c(0,1),proportionMutatedPerSNP=c(0.1,0.8),verbose=FALSE) {
-    if (verbose) cat("\n\nImputing ",snacsObj$exptName," ...\n",sep="")
+    if (verbose) cat("\nFiltering ",snacsObj$exptName," ...\n",sep="")
     dirData="../data/"
 
     numSNP=nrow(snacsObj$mut); numCell=ncol(snacsObj$mut)
@@ -191,7 +191,7 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
 imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     timeStamp=Sys.time()
 
-    if (!is.na(match("filtered",snacsObj[["processLevels"]]))) stop("Run filterData() before imputing data\n")
+    if (is.na(match("filtered",snacsObj[["processLevels"]]))) stop("Run filterData() before imputing data\n")
 
     if (verbose) cat("\n\nImputing ",snacsObj$exptName," ...\n",sep="")
     dirData="../data/"

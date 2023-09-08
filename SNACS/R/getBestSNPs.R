@@ -13,7 +13,7 @@
 #' @return A SNACSList object
 #' @export
 getBestSNPs=function(snacsObj,cell_anno_var=NULL,clustMethodForRankedSNPs=c("hclust","skmean"),clustMethodForBestSNPs=c("hclust","skmean"),pvSnpThres=10^-320,outputFormat=c("","pdf","png")) {
-    if (!is.na(match("imputed",snacsObj[["processLevels"]]))) stop("Run imputeMissingMutations() before selecting SNPs for making hash calls\n")
+    #if (is.na(match("imputed",snacsObj[["processLevels"]]))) stop("Run imputeMissingMutations() before selecting SNPs for making hash calls\n")
     if (is.null(cell_anno_var)) cell_anno_var_rankedSNPs=snacsObj$annHash$hashNames
     cell_anno_var_bestSNPs=c(cell_anno_var_rankedSNPs,paste0("clustRankedSNPs_",clustMethodForRankedSNPs[1]))
     snacsObj=getRankedSNPs.internal(snacsObj,cell_anno_var=cell_anno_var_rankedSNPs,clustMethod=clustMethodForRankedSNPs,outputFormat=outputFormat)

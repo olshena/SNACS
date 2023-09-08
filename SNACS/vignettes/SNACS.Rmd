@@ -58,6 +58,16 @@ snacsObj
 
 ```
 
+## Filter data
+SNPs and cells with high proportion of missing values should be excluded. We will also filter out SNPs with low or high proportion of mutations.
+
+```{r, echo = TRUE}
+
+snacsObj <- filterData(snacsObj=snacsObj)
+snacsObj
+
+```
+
 ## Impute missing mutations
 Currently, SNACS package cannot work on mutation data with missing values. We can impute missing mutations as follows.
 

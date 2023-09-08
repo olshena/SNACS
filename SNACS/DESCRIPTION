@@ -18,7 +18,8 @@ Imports:
         DescTools
 Depends: 
     R (>= 2.10)
-Suggests: 
+Suggests:
+    sf,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
