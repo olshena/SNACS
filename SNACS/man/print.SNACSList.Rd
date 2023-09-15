@@ -2,7 +2,7 @@
 % Please edit documentation in R/processData.R
 \name{print.SNACSList}
 \alias{print.SNACSList}
-\title{Prints SNACSList object.}
+\title{Print SNACSList object.}
 \usage{
 \method{print}{SNACSList}(x, ...)
 }
@@ -12,5 +12,5 @@
 \item{...}{ignored}
 }
 \description{
-Prints SNACSList object.
+Print SNACSList object.
 }

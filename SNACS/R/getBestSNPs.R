@@ -1,8 +1,8 @@
 ####################################################################
 ####################################################################
-#' Select SNPs that best separate the hashes.
+#' Select SNPs that best separate the hashes
 #'
-#' Cluster data to rank and select SNPs that best separate the hashes. Generate heatmaps of the ranked and best selected SNPs.
+#' Cluster cells, where the number of clusters is the number of hashes, using the mutation data. Rank the SNPs in the order that best separates into those clusters. Then select the best SNPs that separate the cells into those clusters and re-cluster the cells using those SNPs. Generate heatmaps of the mutation data with the ranked and best SNPs.
 #'
 #' @param snacsObj SNACSList object
 #' @param cell_anno_var Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL
@@ -13,7 +13,7 @@
 #' @return A SNACSList object
 #' @export
 getBestSNPs=function(snacsObj,cell_anno_var=NULL,clustMethodForRankedSNPs=c("hclust","skmean"),clustMethodForBestSNPs=c("hclust","skmean"),pvSnpThres=10^-320,outputFormat=c("","pdf","png")) {
-    #if (is.na(match("imputed",snacsObj[["processLevels"]]))) stop("Run imputeMissingMutations() before selecting SNPs for making hash calls\n")
+    if (is.na(match("imputed",snacsObj[["processLevels"]]))) stop("Run imputeMissingMutations() before selecting SNPs for making hash calls\n")
     if (is.null(cell_anno_var)) cell_anno_var_rankedSNPs=snacsObj$annHash$hashNames
     cell_anno_var_bestSNPs=c(cell_anno_var_rankedSNPs,paste0("clustRankedSNPs_",clustMethodForRankedSNPs[1]))
     snacsObj=getRankedSNPs.internal(snacsObj,cell_anno_var=cell_anno_var_rankedSNPs,clustMethod=clustMethodForRankedSNPs,outputFormat=outputFormat)
@@ -23,9 +23,9 @@ getBestSNPs=function(snacsObj,cell_anno_var=NULL,clustMethodForRankedSNPs=c("hcl
 
 ###########################################################
 ###########################################################
-#' Rank SNPs in the order that best separates the hashes.
+#' Rank SNPs in the order that best separates the hashes
 #'
-#' Cluster data to rank that best separate the hashes. Generate heatmap of the ranked SNPs.
+#' Cluster cells, where the number of clusters is the number of hashes, using the mutation data. Then rank the SNPs in the order that best separates into those clusters. Generate heatmap of the mutation data with the ranked SNPs.
 #'
 #' @param snacsObj SNACSList object
 #' @param cell_anno_var Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL
@@ -178,9 +178,9 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
 
 ###########################################################
 ###########################################################
-#' Select SNPs that best separates the hashes.
+#' Select SNPs that best separates the hashes
 #'
-#' Cluster data to select SNPs that best separate the hashes. Generate heatmap of the best SNPs.
+#' Select the best SNPs that separate the cells into clusters, where the number of clusters is the number of hashes, using the mutation data. Then re-cluster the cells using the best SNPs. Generate heatmap of the mutation data with the best SNPs.
 #'
 #' @param snacsObj SNACSList object
 #' @param cell_anno_var Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL
@@ -338,7 +338,6 @@ getBestSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","skm
     ################################################
     invisible(snacsObj)
 }
-
 
 ###########################################################
 ###########################################################

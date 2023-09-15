@@ -3,7 +3,7 @@
 \docType{data}
 \name{hashMat}
 \alias{hashMat}
-\title{Antibody data}
+\title{Example hash antibody data}
 \format{
 \subsection{\code{hashMat}}{
 

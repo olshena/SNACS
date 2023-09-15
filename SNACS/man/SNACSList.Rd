@@ -2,7 +2,7 @@
 % Please edit documentation in R/processData.R
 \name{SNACSList}
 \alias{SNACSList}
-\title{Creates a SNACSList object.}
+\title{Create a SNACSList object.}
 \usage{
 SNACSList(
   mut,

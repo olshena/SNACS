@@ -2,7 +2,7 @@
 % Please edit documentation in R/getBestSNPs.R
 \name{getRankedSNPs.internal}
 \alias{getRankedSNPs.internal}
-\title{Rank SNPs in the order that best separates the hashes.}
+\title{Rank SNPs in the order that best separates the hashes}
 \usage{
 getRankedSNPs.internal(
   snacsObj,
@@ -24,5 +24,5 @@ getRankedSNPs.internal(
 A SNACSList object
 }
 \description{
-Cluster data to rank that best separate the hashes. Generate heatmap of the ranked SNPs.
+Cluster cells, where the number of clusters is the number of hashes, using the mutation data. Then rank the SNPs in the order that best separates into those clusters. Generate heatmap of the mutation data with the ranked SNPs.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/hashCall.R
 \name{makeHashCall}
 \alias{makeHashCall}
-\title{Make hash calls.}
+\title{Make hash calls}
 \usage{
 makeHashCall(
   snacsObj,
@@ -15,7 +15,7 @@ makeHashCall(
   maxClustSampleSize = Inf,
   clustCompareMethod = c("t", "hotelling"),
   makeHashCallRnd2 = TRUE,
-  minClustSizeRnd2 = 100,
+  maxClustSizeRnd2 = 100,
   backgndThresRnd2 = 0.75,
   dataTypeRnd2 = c("euclidean", "sum of squares", "log2 euclidean",
     "log2 sum of squares"),
@@ -43,7 +43,7 @@ makeHashCall(
 
 \item{makeHashCallRnd2}{Logical. Make second round of hash call to detect narrow multiplet regions. Default is TRUE}
 
-\item{minClustSizeRnd2}{Integer. Minimum number of cells required to be in a cluster for making second round of hash calls. Default is 100}
+\item{maxClustSizeRnd2}{Integer. Maximum number of cells required to be in a cluster for making second round of hash calls. Default is 100}
 
 \item{backgndThresRnd2}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1}
 
@@ -55,5 +55,6 @@ makeHashCall(
 A SNACSList object
 }
 \description{
-Make hash calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the hash IDs or called a multiplet when it is a mixture of hashes. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background for that hash. The empirical background distribution of a hash antibody is estimated by taking the background mode of the data and generating an empirical symmetric distribution around it. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops it reaches a minimum number of cells.
+Make hash calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the hash IDs (a singlet) or a set of hash IDs (a multiplet), when it is a mixture of samples. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. The clusters based on mutation data give a rough assignment of hash calls. The hash calls are refined by looking at the antibody data of the cells which cluster together. The cell clusters obtained from running "getBestSNPs" are split into sub-clusters and each sub-cluster is assigned a hash ID if enough cells in that group have a signal above the background for the corresponding hash. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops when it reaches a minimum number of cells. The singlet and multiplet assignments are made to each of the sub-clusters using the hash antibody data. The antibody expression for a sample is expected to have a bimodal distribution representing a background, which are cells not from the sample, and a foreground, which are cells belonging to the sample. The background distribution is estimated by considering the data from the lower bound till the mode of the background and generating a symmetrical distribution from it. Then, the empirical cumulative distribution function of this distribution becomes the estimated background distribution. A sub-cluster is assigned the ID of each sample which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThreshold", of the hash background. A sub-cluster with multiple samples above their corresponding hash background is considered a multiplet. The result is stored in the column "hashCallRnd1" in the "annCell" table of the SNACS object.
+The above hash calls are refined by detecting narrow regions of multiplets. The cells, ordered as in the clusters above, are segmented by applying circular binary segmentation (CBS) on the distance to the centroid of the hash call groups. A segment is assigned the ID of each hash which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThresRnd2", of the hash background. A segment with multiple hashes above their corresponding hash background is considered a multiplet. Only narrow segments, specified by "maxClustSizeRnd2", are considered. The result is stored in the column "hashCallRnd2" in the "annCell" table of the SNACS object
 }

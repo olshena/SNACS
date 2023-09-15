@@ -2,7 +2,7 @@
 % Please edit documentation in R/processData.R
 \name{filterData}
 \alias{filterData}
-\title{Filters mutation data in SNACSList object.}
+\title{Filter mutation data in SNACSList object.}
 \usage{
 filterData(
   snacsObj,
@@ -30,5 +30,5 @@ filterData(
 A SNACSList object
 }
 \description{
-Filters mutation data in SNACSList object.
+Filter mutation data in SNACSList object.
 }

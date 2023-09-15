@@ -2,7 +2,7 @@
 % Please edit documentation in R/processData.R
 \name{imputeMissingMutations}
 \alias{imputeMissingMutations}
-\title{Imputes missing mutations in SNACSList object.}
+\title{Impute missing mutations in SNACSList object.}
 \usage{
 imputeMissingMutations(snacsObj, verbose = FALSE)
 }
@@ -15,5 +15,5 @@ imputeMissingMutations(snacsObj, verbose = FALSE)
 A SNACSList object
 }
 \description{
-Imputes missing mutations in SNACSList object.
+Impute missing mutations in SNACSList object.
 }

@@ -107,7 +107,7 @@ generateHashDensityPlot(snacsObj)
 ```
 
 ## Make hash calls
-This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned the ID of one of the hashes or called a multiplet when it is a mixture of hashes. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background of that hash.
+This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned the ID of one of the hashes or called a multiplet when it is a mixture of hashes. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background of that hash. The hash calls are saved in the "hashCallRnd1" column in the "annCell" table of the SNACS object. A refined version of the hash calls are saved in the "hashCallRnd2" column in the "annCell" table where regions of multiplets too narrow to be picked up in the first round are marked.
 
 ```{r, echo = TRUE}
 

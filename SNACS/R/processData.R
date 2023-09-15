@@ -1,6 +1,6 @@
 ####################################################################
 ####################################################################
-#' Creates a SNACSList object.
+#' Create a SNACSList object.
 #'
 #' SNACS stores data in a simple list-based data object called a SNACSList.
 #'
@@ -89,7 +89,7 @@ SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,annHash=NULL,has
 
 ####################################################################
 ####################################################################
-#' Prints SNACSList object.
+#' Print SNACSList object.
 #'
 #' @method print SNACSList
 #' @param x SNACSList object
@@ -107,7 +107,7 @@ print.SNACSList=function(x,...) {
 
 ####################################################################
 ####################################################################
-#' Filters mutation data in SNACSList object.
+#' Filter mutation data in SNACSList object.
 #'
 #' @param snacsObj SNACSList object
 #' @param proportionMissingPerCell Numeric. Only cells with lower than this proportion of missing values are considered. Default is 0.4. Range is 0-1
@@ -182,7 +182,7 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
 
 ####################################################################
 ####################################################################
-#' Imputes missing mutations in SNACSList object.
+#' Impute missing mutations in SNACSList object.
 #'
 #' @param snacsObj SNACSList object
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
@@ -216,6 +216,7 @@ imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     snacsObj[["annCell"]]=annCellThis
     snacsObj[["annSNP"]]=annSNPthis
     snacsObj[["missing"]]=missMat
+    snacsObj[["processLevels"]]=c(snacsObj[["processLevels"]],"imputed")
 
     if (verbose) {
         cat("\nImputation done\n\n",sep="")

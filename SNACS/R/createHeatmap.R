@@ -1,4 +1,4 @@
-#' Generate heatmap of mutation data.
+#' Generate heatmap of mutation data
 #'
 #' @param snacsObj SNACSList object
 #' @param cell_anno_var Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL

@@ -2,7 +2,7 @@
 % Please edit documentation in R/getBestSNPs.R
 \name{getBestSNPs.internal}
 \alias{getBestSNPs.internal}
-\title{Select SNPs that best separates the hashes.}
+\title{Select SNPs that best separates the hashes}
 \usage{
 getBestSNPs.internal(
   snacsObj,
@@ -27,5 +27,5 @@ getBestSNPs.internal(
 A SNACSList object
 }
 \description{
-Cluster data to select SNPs that best separate the hashes. Generate heatmap of the best SNPs.
+Select the best SNPs that separate the cells into clusters, where the number of clusters is the number of hashes, using the mutation data. Then re-cluster the cells using the best SNPs. Generate heatmap of the mutation data with the best SNPs.
 }

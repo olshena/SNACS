@@ -2,7 +2,7 @@
 % Please edit documentation in R/hashCall.R
 \name{generateHashDensityPlot}
 \alias{generateHashDensityPlot}
-\title{Generate hash antibody background density plot.}
+\title{Generate hash antibody background density plot}
 \usage{
 generateHashDensityPlot(
   snacsObj,

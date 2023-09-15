@@ -3,7 +3,7 @@
 \docType{data}
 \name{mutMat}
 \alias{mutMat}
-\title{Mutation data}
+\title{Example mutation data}
 \format{
 \subsection{\code{mutMat}}{
 
@@ -15,6 +15,5 @@ mutMat
 }
 \description{
 The mutation data should be a numeric matrix with SNPs in the rows and cells in the columns. 1s represent mutations and 0s non-mutations.
-...
 }
 \keyword{datasets}

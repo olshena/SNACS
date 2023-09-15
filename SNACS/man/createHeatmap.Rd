@@ -2,7 +2,7 @@
 % Please edit documentation in R/createHeatmap.R
 \name{createHeatmap}
 \alias{createHeatmap}
-\title{Generate heatmap of mutation data.}
+\title{Generate heatmap of mutation data}
 \usage{
 createHeatmap(
   snacsObj,
@@ -39,5 +39,5 @@ createHeatmap(
 A SNACSList object
 }
 \description{
-Generate heatmap of mutation data.
+Generate heatmap of mutation data
 }
