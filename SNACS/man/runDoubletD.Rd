@@ -4,16 +4,18 @@
 \alias{runDoubletD}
 \title{Run doubletD}
 \usage{
-runDoubletD(df_total, df_alt)
+runDoubletD(snacsObj = NULL, depthTotal = NULL, depthAlt = NULL)
 }
 \arguments{
-\item{df_total}{Data frame. First column is the cell ID. Rest of the columns repesent SNPs having total depth values}
+\item{snacsObj}{SNACSList object. Either snacsObj or depthTotal and depthAlt has to be provided}
 
-\item{df_alt}{Data frame. First column is the cell ID. Rest of the columns repesent SNPs having alternate depth values}
+\item{depthTotal}{Numeric matrix. Matrix having total depth values as numeric data. Rows depict SNPs and columns cells}
+
+\item{depthAlt}{Numeric matrix. Matrix having total alternate values as numeric data. Rows depict SNPs and columns cells}
 }
 \value{
-A single column matrix of singlet or doublet designation for each cell
+A SNACSList object if input is a SNACSList; otherwise, a vector of singlet or doublet designation for each cell
 }
 \description{
-doubletD assigns singlet or doublet designation to each cell based on total depth and alternate depth values.
+Assign singlet or doublet designation to each cell based on total depth and alternate depth values by applying doubletD method. The result is stored in the column "doubletD" in the "annCell" table of the SNACS object.
 }

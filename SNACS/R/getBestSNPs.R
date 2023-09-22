@@ -56,7 +56,7 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
     annSNPthis=snacsObj$annSNP
     annCellThis=snacsObj$annCell
     hashesThis=snacsObj$hashes
-    
+
     ################################################
     if (is.na(pvSnpThres)) {
         if (clustMethod=="skmean") {
@@ -115,12 +115,20 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
     }
     datThis=datThis[i,]
     annSNPthis=annSNPthis[i,]
-    
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[i,]
+        snacsObj$depthAlt=snacsObj$depthAlt[i,]
+    }
+
     j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
     datThis=datThis[,j]
     hashesThis=hashesThis[,j]
     annCellThis=annCellThis[j,]
-    
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[,j]
+        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    }
+
     if (clustMethod=="skmean") {
         if (!is.na(pvSnpThres)) {
             clustCell=skmeans::skmeans(t(datThis),k=nrow(snacsObj$annHash))
@@ -142,6 +150,10 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
         datThis=datThis[,j]
         hashesThis=hashesThis[,j]
         annCellThis=annCellThis[j,]
+        if (!is.null(snacsObj$depthTotal)) {
+            snacsObj$depthTotal=snacsObj$depthTotal[,j]
+            snacsObj$depthAlt=snacsObj$depthAlt[,j]
+        }
     }
 
     ################################################
@@ -152,6 +164,10 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
             i=rev(i)
             datThis=datThis[i,]
             annSNPthis=annSNPthis[i,]
+            if (!is.null(snacsObj$depthTotal)) {
+                snacsObj$depthTotal=snacsObj$depthTotal[i,]
+                snacsObj$depthAlt=snacsObj$depthAlt[i,]
+            }
         }
     }
     
@@ -160,6 +176,10 @@ getRankedSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","s
     datThis=datThis[,j]
     hashesThis=hashesThis[,j]
     annCellThis=annCellThis[j,]
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[,j]
+        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    }
 
     ################################################
     names(annCellThis)[match(paste0("cluster_",clustMethod),names(annCellThis))]=paste0("clustRankedSNPs_",clustMethod)
@@ -324,12 +344,23 @@ getBestSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","skm
     i=match(annSNPthis$id,snacsObj$annSNP$id)
     snacsObj$mut=snacsObj$mut[i,]
     snacsObj$annSNP=snacsObj$annSNP[i,]
-    
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[i,]
+        snacsObj$depthAlt=snacsObj$depthAlt[i,]
+    }
+
     ################################################
-    j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
-    snacsObj$mut=snacsObj$mut[,j]
-    snacsObj$hashes=snacsObj$hashes[,j]
-    snacsObj$annCell=snacsObj$annCell[j,]
+    if (F) {
+        ## Exclude cells with no or all mutations
+        j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
+        snacsObj$mut=snacsObj$mut[,j]
+        snacsObj$hashes=snacsObj$hashes[,j]
+        snacsObj$annCell=snacsObj$annCell[j,]
+        if (!is.null(snacsObj$depthTotal)) {
+            snacsObj$depthTotal=snacsObj$depthTotal[,j]
+            snacsObj$depthAlt=snacsObj$depthAlt[,j]
+        }
+    }
 
     ################################################
     clustObj=createHeatmap(snacsObj,cell_anno_var,col_dend=T,row_dend=F,h_title=h_title,outputFormat=outputFormat,outputFileName=outputFileName)

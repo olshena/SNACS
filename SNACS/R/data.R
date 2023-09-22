@@ -3,7 +3,7 @@
 #' The mutation data should be a numeric matrix with SNPs in the rows and cells in the columns. 1s represent mutations and 0s non-mutations.
 #'
 #' @format ## `mutMat`
-#' A matrix with 24 rows and 750 columns:
+#' A matrix with 22 rows and 739 columns:
 "mutMat"
 
 
@@ -13,5 +13,23 @@
 #'   ...
 #'
 #' @format ## `hashMat`
-#' A matrix with 3 rows and 750 columns:
+#' A matrix with 3 rows and 739 columns:
 "hashMat"
+
+
+#' Example total depth data
+#'
+#' The total depth data should be a numeric matrix with SNPs in the rows and cells in the columns. The total depth value should be a continuous numeric measure.
+#'
+#' @format ## `depthTotalMat`
+#' A matrix with 22 rows and 739 columns:
+"depthTotalMat"
+
+
+#' Example alternate depth data
+#'
+#' The alternate depth data should be a numeric matrix with SNPs in the rows and cells in the columns. The total depth value should be a continuous numeric measure.
+#'
+#' @format ## `depthAltMat`
+#' A matrix with 22 rows and 739 columns:
+"depthAltMat"

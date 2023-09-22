@@ -44,16 +44,31 @@ dim(hashMat)
 hashMat[,1:4]
 
 ```
+Matrix "depthTotalMat" has the total depth data.
 
+```{r, echo = TRUE}
+
+dim(depthTotalMat)
+depthTotalMat[1:4,1:4]
+
+```
+Matrix "depthAltMat" has the alternate depth data.
+
+```{r, echo = TRUE}
+
+dim(depthAltMat)
+depthAltMat[1:4,1:4]
+
+```
 ## Create SNACSList object
 SNACS stores data in a simple list-based data object called a SNACSList. The SNACSList object can be made for the example data as follows.
 ```{r, echo = TRUE}
 
-## Parameters mut, hashes, exptName are mandatory while hashColors is optional
+## Parameters mut, hashes, exptName are mandatory while depthTotalMat, depthAltMat and hashColors are optional. depthTotalMat and depthAltMat are used for making doubletD calls
 exptName <- "snacsExpt"
 hashColors <- c("indianred2","green3","dodgerblue3")
 
-snacsObj <- SNACSList(mut=mutMat,hashes=hashMat,exptName=exptName,hashColors=hashColors)
+snacsObj <- SNACSList(mut=mutMat,hashes=hashMat,exptName=exptName,depthTotal=depthTotalMat,depthAlt=depthAltMat,hashColors=hashColors)
 snacsObj
 
 ```
@@ -90,7 +105,7 @@ The cluster designations from the first round of clustering are saved in the col
 ```{r, echo = TRUE}
 
 ## The p-value for selecting best SNPs can be specified
-pvSnpThres <- 0.05
+pvSnpThres <- 10^-100
 
 snacsObj <- getBestSNPs(snacsObj,pvSnpThres=pvSnpThres)
 snacsObj
@@ -118,6 +133,18 @@ snacsObj$annCell[1:4,]
 
 ```
 
+## Refine multiplet calls with doubletD
+The hash calls can be further refined by applying doubletD method. Doublets identified by doubletD will be added to the second round of hash calls. These calls are saved in the "snacsPlusDoubletDCall" column in the "annCell" table of the SNACS object.
+
+```{r, echo = TRUE}
+
+snacsObj=runSNACSplusDoubletD(snacsObj)
+
+## The SNACS plus doubletD based hash calls are saved in the "annCell" table in the SNACSList object
+snacsObj$annCell[1:4,]
+
+```
+
 ## Annotate heatmap
 Custom cell and SNP annotations can be added to the heatmaps. Here the heatmap of the best SNPS are annotated with color bars for the hash calls along with the clusters from the first round of clustering, and the hash antibody measures.
 The parameter "outputFormat" can be used to save the heatmap in "pdf" or "png" format. The output is then saved in "../output" folder.
@@ -125,8 +152,8 @@ The parameter "outputFormat" can be used to save the heatmap in "pdf" or "png" f
 ```{r, fig.show = "hold", out.width = "50%", echo = TRUE}
 
 createHeatmap(snacsObj,
-   cell_anno_var=c("hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"),
-   cell_anno_name=c("hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"cluster"),
+   cell_anno_var=c("snacsPlusDoubletDCall","doubletDCall","hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"),
+   cell_anno_name=c("snacs+DD","doubletD","hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"cluster"),
    outputFormat="")
 
 ```

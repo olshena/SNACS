@@ -399,6 +399,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
     snacsObj$centroid=centroid
     snacsObj$dist2centroidMat=dist2centroidMat
     if (makeHashCallRnd2) {
+        snacsObj$annCell$hashCallRnd2=""
         snacsObj$annCell$hashCallRnd2[j2]=hashCallRnd2[j1]
         snacsObj$annCell$hashCallRnd2[snacsObj$hashCallRnd2==""]=NA
         snacsObj$annCell$clustSplitRnd2=clustSplitRnd2

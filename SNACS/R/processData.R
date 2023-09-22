@@ -4,16 +4,18 @@
 #'
 #' SNACS stores data in a simple list-based data object called a SNACSList.
 #'
-#' @param mut Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns  cells
+#' @param mut Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns cells
 #' @param hashes Numeric matrix. Matrix having hash values as numeric data. Rows depict hashes and columns cells
 #' @param exptName Character. Experiment name
+#' @param depthTotal Numeric matrix. Matrix having total depth values as numeric data. Rows depict SNPs and columns cells
+#' @param depthAlt Numeric matrix. Matrix having total alternate values as numeric data. Rows depict SNPs and columns cells
 #' @param annCell Data frame. Table of cell annotation. Default is NULL
 #' @param annSNP Data frame. Table of SNP annotation. Default is NULL
 #' @param annHash Data frame. Table of hash annotation. Default is NULL
 #' @param hashColors Character vector. hashColors Colors of the hashes. Default is NULL
 #' @return A SNACSList object
 #' @export
-SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,annHash=NULL,hashColors=NULL) {
+SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NULL,annSNP=NULL,annHash=NULL,hashColors=NULL) {
     
     if (!is.matrix(mut)) stop("mut has to be a matrix of 0s and 1s")
     if (!is.numeric(mut[1,1]) | !all(c(0,1)%in%mut) | any(!mut[!is.na(mut)]%in%c(0,1))) stop("mut has to be a matrix of 0s and 1s")
@@ -44,6 +46,13 @@ SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,annHash=NULL,has
     for (k in 1:ncol(annSNP)) if (is.factor(annSNP[,k])) annSNP[,k]=as.character(annSNP[,k])
     if (!is.character(annCell$id)) annCell$id=as.character(annCell$id)
     if (!is.character(annSNP$id)) annSNP$id=as.character(annSNP$id)
+    
+    if (is.matrix(depthTotal) & is.matrix(depthAlt)) {
+        if (nrow(depthTotal)!=nrow(mut) | ncol(depthTotal)!=ncol(mut)) stop("depthTotal has to be a matrix of the same size as mut")
+        if (nrow(depthAlt)!=nrow(mut) | ncol(depthAlt)!=ncol(mut)) stop("depthAlt has to be a matrix of the same size as mut")
+    } else {
+        depthTotal=depthAlt=NULL
+    }
 
     hashColors=hashColors[1:length(hashNames)]
     tbl=data.frame(hashNames=hashNames,hashColors=hashColors,stringsAsFactors=F)
@@ -79,7 +88,7 @@ SNACSList=function(mut,hashes,exptName,annCell=NULL,annSNP=NULL,annHash=NULL,has
         stop("annCell has to be a data frame with at least two columns - id and desc")
     }
 
-    snacsObj=list(mut=mut,hashes=hashes,exptName=exptName,annHash=annHash,annCell=annCell,annSNP=annSNP,processLevels="raw")
+    snacsObj=list(mut=mut,hashes=hashes,exptName=exptName,depthTotal=depthTotal,depthAlt=depthAlt,annHash=annHash,annCell=annCell,annSNP=annSNP,processLevels="raw")
     
     #snacsObj=new("SNACSList",snacsObj)
     attr(snacsObj,"class")="SNACSList"
@@ -135,6 +144,7 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
         stop(paste0("Not enough cells having proportion missing below ",proportionMissingPerCell))
     }
     datThis=snacsObj$mut[i,j]; hashesThis=snacsObj$hashes[,j]; annCellThis=snacsObj$annCell[j,]; annSNPthis=snacsObj$annSNP[i,]
+    if (!is.null(snacsObj$depthTotal)) {depthTotalThis=snacsObj$depthTotal[i,j]; depthAltThis=snacsObj$depthAlt[i,j]}
     rm(propMissPerCellVec)
     
     propMissPerSNPvec=apply(datThis,1,function(x) sum(is.na(x)))/ncol(datThis)
@@ -145,6 +155,7 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
         stop(paste0("Not enough SNPs having proportion missing below ",proportionMissingPerSNP))
     }
     datThis=datThis[i,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]; annSNPthis=annSNPthis[i,]
+    if (!is.null(snacsObj$depthTotal)) {depthTotalThis=depthTotalThis[i,j]; depthAltThis=depthAltThis[i,j]}
     rm(propMissPerSNPvec)
     
     propMutPerSNPvec=apply(datThis,1,function(x) {mean(x==1,na.rm=T)})
@@ -155,6 +166,7 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
         stop(paste0("Not enough SNPs having proportion mutated in the range ",paste(proportionMutatedPerSNP,collapse=" - ")))
     }
     datThis=datThis[i,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]; annSNPthis=annSNPthis[i,]
+    if (!is.null(snacsObj$depthTotal)) {depthTotalThis=depthTotalThis[i,j]; depthAltThis=depthAltThis[i,j]}
     rm(propMutPerSNPvec)
     
     if (verbose) {
@@ -169,6 +181,7 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
         stop(paste0("Not enough cells having proportion mutated in the range ",paste(proportionMutatedPerCell,collapse=" - ")))
     }
     datThis=datThis[,j]; hashesThis=hashesThis[,j]; annCellThis=annCellThis[j,]
+    if (!is.null(snacsObj$depthTotal)) {depthTotalThis=depthTotalThis[,j]; depthAltThis=depthAltThis[,j]}
     rm(propMutPerCellVec)
 
     snacsObj[["mut"]]=datThis
@@ -176,7 +189,8 @@ filterData=function(snacsObj,proportionMissingPerCell=0.4,proportionMissingPerSN
     snacsObj[["annCell"]]=annCellThis
     snacsObj[["annSNP"]]=annSNPthis
     snacsObj[["processLevels"]]=c(snacsObj[["processLevels"]],"filtered")
-    
+    if (!is.null(snacsObj$depthTotal)) {snacsObj[["depthTotal"]]=depthTotalThis; snacsObj[["depthAlt"]]=depthAltThis}
+
     invisible(snacsObj)
 }
 
@@ -196,7 +210,7 @@ imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     if (verbose) cat("\n\nImputing ",snacsObj$exptName," ...\n",sep="")
     dirData="../data/"
     
-    datThis=snacsObj$mut; hashesThis=snacsObj$hashes; annCellThis=snacsObj$annCell; annSNPthis=snacsObj$annSNP
+    datThis=snacsObj$mut
 
     missMat=matrix(F,nrow=nrow(datThis),ncol=ncol(datThis),dimnames=list(rownames(datThis),colnames(datThis))); missMat[is.na(datThis)]=T
     x=matrix(nrow=nrow(datThis),ncol=ncol(datThis),dimnames=list(rownames(datThis),colnames(datThis)))
@@ -212,11 +226,18 @@ imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     rm(x)
 
     snacsObj[["mut"]]=datThis
-    snacsObj[["hashes"]]=hashesThis
-    snacsObj[["annCell"]]=annCellThis
-    snacsObj[["annSNP"]]=annSNPthis
     snacsObj[["missing"]]=missMat
     snacsObj[["processLevels"]]=c(snacsObj[["processLevels"]],"imputed")
+    
+    ## Exclude cells with no or all mutations after imputation
+    j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
+    snacsObj$mut=snacsObj$mut[,j]
+    snacsObj$hashes=snacsObj$hashes[,j]
+    snacsObj$annCell=snacsObj$annCell[j,]
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[,j]
+        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    }
 
     if (verbose) {
         cat("\nImputation done\n\n",sep="")

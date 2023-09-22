@@ -62,12 +62,12 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     ## "generate_heatmap()"  parameters
     
     if (col_dend) ncc=nrow(snacsObj$annHash) else ncc=NA; if (!row_dend) ncr=NA else ncr=NA
-    heatmap_color=c("orangered1","royalblue3","white")
+    #heatmap_color=c("orangered1","royalblue3","white")
+    heatmap_color=c("navy","gray85","orangered1")
     limHM=c(0,1)
     plotInfo=list(margins=c(5,.2),cexRow=0.2,cexCol=0.2,cexRowSide=1,cexColSide=.7,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
     if (outputFormat=="png") plotInfo$cexColSide=1.5
 
-    
     col_var_info=list()
     
     ## Set colors for the hash calls
@@ -83,20 +83,24 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
             multNames=c(multNames,unique(snacsObj$annCell$hashCallRnd2))
             col_var_info[["hashCallRnd2"]]=list(level=unique(snacsObj$annCell$hashCallRnd2))
         }
-        if ("hashCallRnd3"%in%names(snacsObj$annCell)) {
-            multNames=c(multNames,unique(snacsObj$annCell$hashCallRnd3))
-            col_var_info[["hashCallRnd3"]]=list(level=unique(snacsObj$annCell$hashCallRnd3))
+        if ("snacsPlusDoubletDCall"%in%names(snacsObj$annCell)) {
+            multNames=c(multNames,unique(snacsObj$annCell$snacsPlusDoubletDCall))
+            col_var_info[["snacsPlusDoubletDCall"]]=list(level=unique(snacsObj$annCell$snacsPlusDoubletDCall))
         }
         multNames=sort(unique(multNames[!multNames%in%snacsObj$annHash$hashNames]))
     }
     colVec=c(snacsObj$annHash$hashColors,grDevices::gray((1:length(multNames))/length(multNames)))
     multNames=c(snacsObj$annHash$hashNames,multNames)
+    if ("doubletDCall"%in%names(snacsObj$annCell)) {
+        col_var_info[["doubletDCall"]]=list(color=c("navy","white"),level=c("Singlet","Doublet"))
+        k=which(col_var_info[["doubletDCall"]]$level%in%snacsObj$annCell$hashCall_HTOdemux)
+    }
 
     row_var_info=list(SnpEff_Annotation_Impact=list(color=c("brown","yellow","orange","red","white"),
                             level=c("HIGH","LOW","MODERATE","MODIFIER","")),
                             meanDepth=list(limit=c(20,80)),meanQuality=list(limit=c(25,95)))
 
-    for (vId in which(names(col_var_info)%in%intersect(c("hashCallRnd1","hashCallRnd2","hashCallRnd3"),names(snacsObj$annCell)))) {
+    for (vId in which(names(col_var_info)%in%intersect(c("hashCallRnd1","hashCallRnd2","snacsPlusDoubletDCall"),names(snacsObj$annCell)))) {
         k=match(col_var_info[[vId]]$level,multNames)
         col_var_info[[vId]]$level=multNames[k]
         col_var_info[[vId]]$color=colVec[k]

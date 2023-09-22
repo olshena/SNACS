@@ -7,7 +7,7 @@
 \format{
 \subsection{\code{hashMat}}{
 
-A matrix with 3 rows and 750 columns:
+A matrix with 3 rows and 739 columns:
 }
 }
 \usage{

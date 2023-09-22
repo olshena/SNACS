@@ -8,6 +8,8 @@ SNACSList(
   mut,
   hashes,
   exptName,
+  depthTotal = NULL,
+  depthAlt = NULL,
   annCell = NULL,
   annSNP = NULL,
   annHash = NULL,
@@ -15,11 +17,15 @@ SNACSList(
 )
 }
 \arguments{
-\item{mut}{Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns  cells}
+\item{mut}{Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns cells}
 
 \item{hashes}{Numeric matrix. Matrix having hash values as numeric data. Rows depict hashes and columns cells}
 
 \item{exptName}{Character. Experiment name}
+
+\item{depthTotal}{Numeric matrix. Matrix having total depth values as numeric data. Rows depict SNPs and columns cells}
+
+\item{depthAlt}{Numeric matrix. Matrix having total alternate values as numeric data. Rows depict SNPs and columns cells}
 
 \item{annCell}{Data frame. Table of cell annotation. Default is NULL}
 

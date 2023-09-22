@@ -7,7 +7,7 @@
 \format{
 \subsection{\code{mutMat}}{
 
-A matrix with 24 rows and 750 columns:
+A matrix with 22 rows and 739 columns:
 }
 }
 \usage{
