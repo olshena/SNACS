@@ -350,8 +350,8 @@ getBestSNPs.internal=function(snacsObj,cell_anno_var,clustMethod=c("hclust","skm
     }
 
     ################################################
-    if (F) {
-        ## Exclude cells with no or all mutations
+    if (T) {
+        ## Exclude cells with no or all mutations; otherwise, clustering can fail
         j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
         snacsObj$mut=snacsObj$mut[,j]
         snacsObj$hashes=snacsObj$hashes[,j]
