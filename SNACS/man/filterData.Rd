@@ -6,23 +6,23 @@
 \usage{
 filterData(
   snacsObj,
-  proportionMissingPerCell = 0.4,
   proportionMissingPerSNP = 0.4,
+  proportionMissingPerCell = 0.4,
+  proportionMutatedPerSNP = c(0.05, 0.95),
   proportionMutatedPerCell = c(0, 1),
-  proportionMutatedPerSNP = c(0.1, 0.8),
   verbose = FALSE
 )
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{proportionMissingPerCell}{Numeric. Only cells with lower than this proportion of missing values are considered. Default is 0.4. Range is 0-1}
-
 \item{proportionMissingPerSNP}{Numeric. Only SNPs with lower than this proportion of missing values are considered. Default is 0.4. Range is 0-1}
 
-\item{proportionMutatedPerCell}{Numeric vector. Only cells having proportion of mutations within this range are considered. Default is c(0,1). Range is 0-1}
+\item{proportionMissingPerCell}{Numeric. Only cells with lower than this proportion of missing values are considered. Default is 0.4. Range is 0-1}
 
-\item{proportionMutatedPerSNP}{Numeric vector. Only SNPs having proportion of mutations within this range are considered. Default is c(0.1,0.8). Range is 0-1}
+\item{proportionMutatedPerSNP}{Numeric vector. Only SNPs having proportion of mutations within this range are considered. Default is c(0.05,0.95). Range is 0-1}
+
+\item{proportionMutatedPerCell}{Numeric vector. Only cells having proportion of mutations within this range are considered. Default is c(0,1). Range is 0-1}
 
 \item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }

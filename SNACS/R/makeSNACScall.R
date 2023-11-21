@@ -1,3 +1,280 @@
+###########################################################
+###########################################################
+#' Select SNPs that best separates the hashes
+#'
+#' Select the best SNPs that separate the cells into clusters, where the number of clusters is the number of hashes, using the mutation data. Then re-cluster the cells using the best SNPs. Generate heatmap of the mutation data with the best SNPs.
+#'
+#' @param snacsObj SNACSList object
+#' @param numSNP Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3
+#' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
+#' @param cellProportionAboveBackgnd Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
+#' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
+#' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
+#' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
+#' @return A SNACSList object
+#' @export
+getBestSNPs=function(snacsObj,numSNP=3,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {
+    ## -----------------------------------
+    if (is.na(match("filtered",snacsObj[["processLevels"]]))) stop("Run filterData() before selecting best SNPs\n")
+
+    ## -----------------------------------
+    snacsObj=clusterSampleWithAntibodyData(snacsObj,backgndThreshold=backgndThreshold,cellProportionAboveBackgnd=cellProportionAboveBackgnd,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection)
+    generateAntibodyDensityPlot(snacsObj,backgndThreshold=backgndThreshold,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection,outputFormat=outputFormat)
+
+    ## Association of mutation status of each SNP with each sample cluster pair
+    samUniq=snacsObj$annHash$hashNames
+    n=nrow(snacsObj$annSNP)*length(samUniq)*(length(samUniq)-1)/2
+    tmp=rep(NA,n); tmpC=rep("",n)
+    stat=data.frame(id=tmpC,sam1=tmpC,sam2=tmpC,stat=tmp,pv=tmp,propMutIn1stSample=tmp)
+    k=1
+    for (samId1 in 1:(length(samUniq)-1)) {
+        for (samId2 in (samId1+1):length(samUniq)) {
+            j=which(snacsObj$annCell$hashClust%in%c(samUniq[samId1],samUniq[samId2]))
+            for (sId in 1:nrow(snacsObj$annSNP)) {
+                stat$id[k]=snacsObj$annSNP$id[sId]
+                stat$sam1[k]=samUniq[samId1]
+                stat$sam2[k]=samUniq[samId2]
+                x=table(snacsObj$annCell$hashClust[j],snacsObj$mut[sId,j])
+                if (nrow(x)==2 & ncol(x)==2) {
+                    fit=try(stats::chisq.test(x))
+                    if (inherits(fit,"htest")) {
+                        stat$stat[k]=fit$statistic
+                        stat$pv[k]=fit$p.value
+                        stat$propMutIn1stSample[k]=fit$observed[1,2]/sum(fit$observed[1,])
+                    }
+                }
+                k=k+1
+            }
+        }
+    }
+    stat=stat[order(stat$pv,decreasing=F),]
+
+    ## Top SNPs associated with sample cluster pairs
+    n=2*numSNP*length(samUniq)*(length(samUniq)-1)/2
+    tmp=rep(NA,n); tmpC=rep("",n)
+    statBest=data.frame(id=tmpC,sam1=tmpC,sam2=tmpC,dirn=tmpC)
+    k=0
+    for (samId1 in 1:(length(samUniq)-1)) {
+        for (samId2 in (samId1+1):length(samUniq)) {
+            i=which(stat$sam1==samUniq[samId1] & stat$sam2==samUniq[samId2] & stat$propMutIn1stSample>0.5)[1:numSNP]
+            k2=k+(1:numSNP)
+            statBest$id[k2]=stat$id[i]
+            statBest$sam1[k2]=samUniq[samId1]
+            statBest$sam2[k2]=samUniq[samId2]
+            statBest$dirn[k2]=paste0(samUniq[samId1],"up_",samUniq[samId2],"down")
+            i=which(stat$sam1==samUniq[samId1] & stat$sam2==samUniq[samId2] & stat$propMutIn1stSample<0.5)[1:numSNP]
+            k=k+numSNP
+            k2=k+(1:numSNP)
+            statBest$id[k2]=stat$id[i]
+            statBest$sam1[k2]=samUniq[samId1]
+            statBest$sam2[k2]=samUniq[samId2]
+            statBest$dirn[k2]=paste0(samUniq[samId2],"up_",samUniq[samId1],"down")
+            k=k+numSNP
+        }
+    }
+    table(uniqueSNP=!duplicated(statBest$id))
+    id=unique(statBest$id[duplicated(statBest$id)])
+    if (length(id)!=0) {
+        for (ii in 1:length(id)) {
+            i=which(statBest$id==id[ii])
+            statBest$dirn[i]=unique(paste0(statBest$dirn[i],collapse="|"))
+        }
+    }
+    statBest=statBest[!duplicated(statBest$id),]
+
+    i=match(statBest$id,snacsObj$annSNP$id)
+    snacsObj$mut=snacsObj$mut[i,]; snacsObj$annSNP=snacsObj$annSNP[i,]
+    snacsObj$annSNP$dirn=statBest$dirn
+    snacsObj[["processLevels"]]=c(snacsObj[["processLevels"]],"bestSNPs")
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[i,]
+        snacsObj$depthAlt=snacsObj$depthAlt[i,]
+    }
+
+    invisible(snacsObj)
+}
+
+###########################################################
+###########################################################
+#' Cluster cells based on the SNP data
+#'
+#' Cluster cells, where the number of clusters is the number of hashes, using the mutation data. Then rank the SNPs in the order that best separates into those clusters. Generate heatmap of the mutation data with the ranked SNPs.
+#'
+#' @param snacsObj SNACSList object
+#' @param clustMethod Character. Clustering method for ranking SNPs. Options are "hclust" and "skmean". Default is "hclust"
+#' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
+#' @return A SNACSList object
+#' @export
+clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outputFormat=c("","pdf","png")) {
+    clustMethod=clustMethod[1]
+    outputFormat=outputFormat[1]
+
+    ## -----------------------------------
+    if (is.na(match("bestSNPs",snacsObj[["processLevels"]]))) stop("Run getBestSNPs() before clustering SNPs\n")
+    if (is.na(match("imputed",snacsObj[["processLevels"]]))) stop("Run imputeMissingMutations() before clustering SNPs\n")
+
+    pvSnpThres=NA
+    cellClusterFileName=NA
+    subsetSnpFlag=""
+    subsetCellFlag=""
+    
+    outputFileName=paste0("heatmap",ifelse(clustMethod=="skmean","_skmean",""),"_pvRanked_",snacsObj$exptName)
+    if (outputFormat=="") h_title="Heatmap of ranked SNPs" else h_title=NULL
+    
+    cell_anno_var_rankedSNPs=snacsObj$annHash$hashNames
+    
+    ################################################
+    ## Compute cosine cross-distances between the rows of matrices
+    getSKmeansDist=function(x) {stats::as.dist(skmeans::skmeans_xdist(x))}
+    distfun=getSKmeansDist
+    linkMethod="ward.D2"
+
+    ################################################
+    datThis=snacsObj$mut
+    annSNPthis=snacsObj$annSNP
+    annCellThis=snacsObj$annCell
+    hashesThis=snacsObj$hashes
+
+    ################################################
+    if (is.na(pvSnpThres)) {
+        if (clustMethod=="skmean") {
+            clustCell=skmeans::skmeans(t(datThis),k=nrow(snacsObj$annHash))
+            silCell=cluster::silhouette(clustCell)
+            clustCell=clustCell$cluster[match(annCellThis$id,names(clustCell$cluster))]
+            silCell=silCell[match(annCellThis$id,rownames(silCell)),]
+            annCellThis$cluster_skmean=clustCell
+            annCellThis$cluster_silhouette=silCell[,"sil_width"]
+            grp=annCellThis$cluster_skmean
+        } else if (!is.na(cellClusterFileName)) {
+            clustCell=utils::read.table(cellClusterFileName, sep="\t", h=T, quote="", comment.char="",as.is=T,fill=T,nrow=-1)
+            j=match(annCellThis$id,clustCell$id)
+            if (any(is.na(j))) stop("filter_data_for_heatmap: Cell mismatch !!!")
+            clustCell=clustCell[j,]
+            annCellThis$cluster_hclust=clustCell[,paste0("clustId_",nrow(snacsObj$annHash))]
+            grp=annCellThis$cluster_hclust
+        } else {
+            distMat=distfun(t(datThis))
+            clustCell=stats::hclust(distMat,method=linkMethod)
+            clustCell=heatmap4::cutCluster(clustCell,ann=annCellThis,nClust=nrow(snacsObj$annHash))
+            j=match(annCellThis$id,clustCell$id)
+            if (any(is.na(j))) stop("filter_data_for_heatmap: Cell mismatch !!!")
+            clustCell=clustCell[j,]
+            annCellThis$cluster_hclust=clustCell[,paste0("clustId_",nrow(snacsObj$annHash))]
+            grp=annCellThis$cluster_hclust
+        }
+        grpUniq=unique(grp)
+        pvMat=matrix(nrow=nrow(annSNPthis),ncol=length(grpUniq))
+        lorMat=matrix(nrow=nrow(annSNPthis),ncol=length(grpUniq))
+        for (gId in 1:length(grpUniq)) {
+            grp2=rep(1,length(grp))
+            grp2[which(!grp%in%grpUniq[gId])]=0
+            for (i in 1:nrow(annSNPthis)) {
+                x=table(datThis[i,],grp2)
+                if (nrow(x)<2 | ncol(x)<2) {
+                    pvMat[i,gId]=99
+                } else {
+                    res=stats::fisher.test(datThis[i,],grp2)
+                    pvMat[i,gId]=res$p.value
+                    lorMat[i,gId]=log(res$estimate)
+                }
+            }
+        }
+        annSNPthis$minPValue_1VsOtherClusters=apply(pvMat,1,min,na.rm=T)
+        annSNPthis$maxLOR_1VsOtherClusters=apply(lorMat,1,max,na.rm=T)
+        i=rev(order(annSNPthis$minPValue_1VsOtherClusters))
+    } else {
+        i=which(annSNPthis$minPValue_1VsOtherClusters<=pvSnpThres)
+        if (length(i)==0) {
+            cat("\n\n No. of SNPs :",nrow(annSNPthis),"\n",sep="")
+            cat("SNP p-values:\n")
+            print(summary(annSNPthis$minPValue_1VsOtherClusters))
+            stop(paste0("No SNPs with p-value <= ",pvSnpThres," !!!"))
+        }
+    }
+    datThis=datThis[i,]
+    annSNPthis=annSNPthis[i,]
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[i,]
+        snacsObj$depthAlt=snacsObj$depthAlt[i,]
+    }
+
+    j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
+    datThis=datThis[,j]
+    hashesThis=hashesThis[,j]
+    annCellThis=annCellThis[j,]
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[,j]
+        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    }
+
+    if (clustMethod=="skmean") {
+        if (!is.na(pvSnpThres)) {
+            clustCell=skmeans::skmeans(t(datThis),k=nrow(snacsObj$annHash))
+            silCell=cluster::silhouette(clustCell)
+            clustCell=clustCell$cluster[match(annCellThis$id,names(clustCell$cluster))]
+            silCell=silCell[match(annCellThis$id,rownames(silCell)),]
+            annCellThis$cluster_skmean2=clustCell
+            annCellThis$cluster_silhouette2=silCell[,"sil_width"]
+            grp=annCellThis$cluster_skmean2
+        }
+        grp=annCellThis$cluster_skmean
+        grpUniq=unique(grp)
+        j=c()
+        for (gId in 1:length(grpUniq)) {
+            jj=which(grp==grpUniq[gId])
+            k=order(annCellThis$cluster_silhouette[jj])
+            j=c(j,jj[k])
+        }
+        datThis=datThis[,j]
+        hashesThis=hashesThis[,j]
+        annCellThis=annCellThis[j,]
+        if (!is.null(snacsObj$depthTotal)) {
+            snacsObj$depthTotal=snacsObj$depthTotal[,j]
+            snacsObj$depthAlt=snacsObj$depthAlt[,j]
+        }
+    }
+
+    ################################################
+    if (subsetSnpFlag!="") {
+        if (subsetSnpFlag=="_knownHashSnpOrder") {
+            tbl=utils::read.table(paste0("../heatmap/_knownHash/clustInfoSnp_knownHash_",snacsObj$exptName,".txt"),sep="\t",h=T,quote="",comment.char="",as.is=T,fill=T)
+            i=match(tbl$id,annSNPthis$id)
+            i=rev(i)
+            datThis=datThis[i,]
+            annSNPthis=annSNPthis[i,]
+            if (!is.null(snacsObj$depthTotal)) {
+                snacsObj$depthTotal=snacsObj$depthTotal[i,]
+                snacsObj$depthAlt=snacsObj$depthAlt[i,]
+            }
+        }
+    }
+    
+    ################################################
+    j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
+    datThis=datThis[,j]
+    hashesThis=hashesThis[,j]
+    annCellThis=annCellThis[j,]
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[,j]
+        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    }
+
+    ################################################
+    names(annCellThis)[match(paste0("cluster_",clustMethod),names(annCellThis))]=paste0("clustRankedSNPs_",clustMethod)
+
+    snacsObj[["mut"]]=datThis
+    snacsObj[["hashes"]]=hashesThis
+    snacsObj[["annCell"]]=annCellThis
+    snacsObj[["annSNP"]]=annSNPthis
+
+    ################################################
+    clustObj=createHeatmap(snacsObj,cell_anno_var=cell_anno_var_rankedSNPs,col_dend=T,row_dend=F,h_title=h_title,outputFormat=outputFormat,outputFileName=outputFileName)
+    snacsObj[["hclustObj_bestSNPs"]]=clustObj$colClust
+
+    ################################################
+    invisible(snacsObj)
+}
+
 ####################################################################
 ####################################################################
 #' Make hash calls
@@ -21,12 +298,12 @@
 #' @param cbsAlpha Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of hash calls. Default is 0.1
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,cellProportionAboveBackgnd=0.5,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),makeHashCallRnd2=TRUE,maxClustSizeRnd2=100,backgndThresRnd2=0.75,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
+makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),makeHashCallRnd2=TRUE,maxClustSizeRnd2=100,backgndThresRnd2=0.75,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
 
     ## -----------------------------------
-    if (is.na(match("hclustObj_bestSNPs",names(snacsObj)))) stop("Run getBestSNPs() before making hash calls\n")
+    if (is.na(match("hclustObj_bestSNPs",names(snacsObj)))) stop("Run clusterCellsWithSNPdata() before making hash calls\n")
 
     ## -----------------------------------
     clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
@@ -92,7 +369,8 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
     value=rep(NA,length(cellId))
     valueOrig=rep(NA,length(cellId))
     grpHigher=stats::cutree(clustObjThis,k=1); grpHigher=grpHigher[cellId]
-    for (hId in 2:(length(heightUniq)-1)) {
+    hMaxId=max(2,length(heightUniq)-1)
+    for (hId in 2:hMaxId) {
         atHeight=heightUniq[hId]
         hashClust=stats::cutree(clustObjThis,h=atHeight)
         grp=hashClust; grp=grp[cellId]
@@ -419,6 +697,82 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
 
 ####################################################################
 ####################################################################
+#' Assign sample IDs to cells based on hash antibody data
+#'
+#' Assign sample IDs to cells based on hash antibody data
+#'
+#' @param snacsObj SNACSList object
+#' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
+#' @param cellProportionAboveBackgnd Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
+#' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
+#' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
+#' @export
+clusterSampleWithAntibodyData=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75) {
+    ## --------------------------------------
+    dirOutput="../output/hashPairPlot/"
+    if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
+
+    ## --------------------------------------
+    ## --------------------------------------
+    #backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; cellProportionAboveBackgnd=0.5
+    backgndThresRnd2=0.75
+    
+    #minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf; clustCompareMethod=c("t","hotelling")
+    #clustCompareMethod[clustCompareMethod[1]]
+    
+    hashMat=t(snacsObj$hashes)
+    ## --------------------------------------
+    ## --------------------------------------
+
+    hashBackgnd=matrix(nrow=4,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres","thresRnd2"),snacsObj$annHash$hashNames))
+    for (k in 1:ncol(hashMat)) {
+        x=stats::density(hashMat[,k],bw="SJ",na.rm=T)
+        xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
+        xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
+        k1=which.max(x$y)
+        if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
+        xx=x$x[k1]
+        x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
+        hashBackgndData=x2
+        hashBackgndECDF=stats::ecdf(hashBackgndData)
+        x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
+        ecdfbg=1-hashBackgndECDF(x2)
+        hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
+    }
+    
+    hashCallThis=rep("",nrow(snacsObj$annCell))
+    hashMatThis=hashMat
+    j=1:length(hashCallThis)
+    for (sampleId in snacsObj$annHash$hashNames) {
+        jj=which(hashMatThis[,sampleId]>=cellProportionAboveBackgnd)
+        if (length(jj)!=0) hashCallThis[jj]=paste0(hashCallThis[jj],"_",sampleId)
+    }
+    hashCallThis=sub("^_", "",hashCallThis)
+    
+    snacsObj$annCell$hashClust=hashCallThis
+    
+    if (F) {
+        fName=paste0(backgndThreshold,"_",cellProportionAboveBackgnd,"_",cellProportionBelowBackgndMode,"_",cellProportionForModeDetection)
+        header=paste0(snacsObj$exptName,"\nBgnd: ",backgndThreshold," thres, ",cellProportionAboveBackgnd," above, ",cellProportionBelowBackgndMode," below, ",cellProportionForModeDetection," mode")
+        header=paste0(snacsObj$exptName,"\nBgnd: ",backgndThreshold," thres, ",cellProportionAboveBackgnd," > prop cell, ",cellProportionBelowBackgndMode," below, ",cellProportionForModeDetection," mode")
+        #grDevices::pdf(paste0(dirOutput,"scatterPlot_hashPair_",snacsObj$exptName,"_",fName,".pdf"))
+        for (samId1 in 1:(nrow(snacsObj$annHash)-1)) {
+            j1=which(snacsObj$annCell$hashClust==snacsObj$annHash$hashNames[samId1])
+            for (samId2 in (samId1+1):nrow(snacsObj$annHash)) {
+                j2=which(snacsObj$annCell$hashClust==snacsObj$annHash$hashNames[samId2])
+                graphics::plot(snacsObj$hashes[samId1,],snacsObj$hashes[samId2,],main=header,xlab=paste0(snacsObj$annHash$hashNames[samId1],": Hash"),ylab=paste0(snacsObj$annHash$hashNames[samId2],": Hash"),pch=16)
+                graphics::points(snacsObj$hashes[samId1,j1],snacsObj$hashes[samId2,j1],pch=16,col=snacsObj$annHash$hashColors[samId1])
+                graphics::points(snacsObj$hashes[samId1,j2],snacsObj$hashes[samId2,j2],pch=16,col=snacsObj$annHash$hashColors[samId2])
+            }
+        }
+        #grDevices::dev.off()
+    }
+
+    invisible(snacsObj)
+}
+
+####################################################################
+####################################################################
 #' Generate hash antibody background density plot
 #'
 #' The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each subject. The top figure shows the distribution of a hash antibody. The middle figure shows the distribution of the background only. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The green lines mark the median and 95th percentile of the background distribution. The bottom figure is the histogram of the hash antibody data. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of that hash antibody. The background of the hash antibody is estimated by determining the background mode based on all cells and generating an empirical symmetric distribution around it.
@@ -430,14 +784,8 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndM
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @export
-generateHashDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {
+generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {
     outputFormat=outputFormat[1]
-
-    ## -----------------------------------
-    if (is.na(match("hclustObj_bestSNPs",names(snacsObj)))) stop("Run getBestSNPs() before making hash calls\n")
-
-    ## -----------------------------------
-    subsetCellFlag=""
 
     ## -----------------------------------
     if (outputFormat=="") {
@@ -448,14 +796,39 @@ generateHashDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBe
         plotInfo=list(cexMain=2,cexLab=1.5,cexAxis=1.5)
     }
 
-    ## -----------------------------------
-    clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
-    clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
+    if (F) {
+        ## -----------------------------------
+        if (is.na(match("hclustObj_bestSNPs",names(snacsObj)))) stop("Run getBestSNPs() before making hash calls\n")
+
+        ## -----------------------------------
+        subsetCellFlag=""
+
+        ## -----------------------------------
+        clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
+        clustInfo=clustInfo[match(snacsObj$hclustObj_bestSNPs$labels,clustInfo$id),]
+
+        ## --------------------------------------
+        clustInfo$clustId=stats::cutree(snacsObj$hclustObj_bestSNPs,k=nrow(snacsObj$annHash))
+        
+        hashMat=as.matrix(clustInfo[,snacsObj$annHash$hashNames])
+    }
+    
+    ## --------------------------------------
+    dirOutput="../output/hashPairPlot/"
+    if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
 
     ## --------------------------------------
-    clustInfo$clustId=stats::cutree(snacsObj$hclustObj_bestSNPs,k=nrow(snacsObj$annHash))
+    ## --------------------------------------
+    #backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; cellProportionAboveBackgnd=0.5
+    backgndThresRnd2=0.75
     
-    hashMat=as.matrix(clustInfo[,snacsObj$annHash$hashNames])
+    #minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf; clustCompareMethod=c("t","hotelling")
+    #clustCompareMethod[clustCompareMethod[1]]
+    
+    hashMat=t(snacsObj$hashes)
+    ## --------------------------------------
+    ## --------------------------------------
+
     hashBackgnd=matrix(nrow=2,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd"),snacsObj$annHash$hashNames))
     ylimHist=rep(NA,ncol(hashMat))
     for (k in 1:ncol(hashMat)) {
@@ -465,8 +838,8 @@ generateHashDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBe
     ylimHist=c(0,max(ylimHist))
     for (k in 1:ncol(hashMat)) {
         switch(outputFormat,
-            "png"={grDevices::png(paste0(dirResult,"densityPlot_hash",subsetCellFlag,"_",snacsObj$annHash$hashNames[k],"_",snacsObj$exptName,".png"),width=5*240,height=3*240)},
-            "pdf"={grDevices::pdf(paste0(dirResult,"densityPlot_hash",subsetCellFlag,"_",snacsObj$annHash$hashNames[k],"_",snacsObj$exptName,".pdf"),width=7,height=7)}
+            "png"={grDevices::png(paste0(dirResult,"densityPlot_hash_",snacsObj$annHash$hashNames[k],"_",snacsObj$exptName,".png"),width=5*240,height=3*240)},
+            "pdf"={grDevices::pdf(paste0(dirResult,"densityPlot_hash_",snacsObj$annHash$hashNames[k],"_",snacsObj$exptName,".pdf"),width=7,height=7)}
         )
         if (outputFormat!="") graphics::par(mfcol=c(3,1))
         
@@ -483,9 +856,9 @@ generateHashDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBe
         hashBGData=x2
         ecdfbg=1-hashBackgndECDF(hashBGData)
         vertLine=c(stats::median(x2),stats::quantile(x2,probs=backgndThreshold)); vertLineLab=c("med",backgndThreshold)
-        plot(x,xlim=xlim,ylim=ylim,main=paste0(snacsObj$exptName,": ",colnames(hashMat)[k]),xlab="Hash",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis)
+        graphics::plot(x,xlim=xlim,ylim=ylim,main=paste0(snacsObj$exptName,": ",colnames(hashMat)[k]),xlab="Hash",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis)
         graphics::lines(stats::density(x2,bw="SJ"),col="red"); graphics::abline(v=vertLine,col="green")
-        plot(stats::density(x2,bw="SJ"),xlim=xlim,ylim=ylim,main="",xlab="Hash background",col="red",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis); graphics::abline(v=vertLine,col="green")
+        graphics::plot(stats::density(x2,bw="SJ"),xlim=xlim,ylim=ylim,main="",xlab="Hash background",col="red",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis); graphics::abline(v=vertLine,col="green")
         graphics::axis(side=3,at=vertLine,labels=vertLineLab,cex.axis=plotInfo$cexAxis,las=3,col="green")
         hashBackgnd[,k]=c(mean(x2),stats::sd(x2))
         x=hashMat[,k]
