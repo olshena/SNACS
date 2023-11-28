@@ -9,7 +9,7 @@ imputeMissingMutations(snacsObj, seed = 12345, verbose = FALSE)
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{seed}{Integer. Seed for generating random number. Default is 12345}
+\item{seed}{Integer. Not implemented. Seed for generating random number. Default is 12345}
 
 \item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }

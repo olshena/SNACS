@@ -103,7 +103,8 @@ runDoubletD <- function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
         df_total <- depthTotal
         df_alt <- depthAlt
     }
-    
+    if (is.null(df_total) | is.null(df_alt)) stop("Total depth and alternate depth matrices have to be provided")
+
     df_total <- t(df_total)
     df_alt <- t(df_alt)
     df_total <- data.frame(df_total)

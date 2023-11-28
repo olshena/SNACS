@@ -63,7 +63,8 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     
     if (col_dend) ncc=nrow(snacsObj$annHash) else ncc=NA; if (!row_dend) ncr=NA else ncr=NA
     #heatmap_color=c("orangered1","royalblue3","white")
-    heatmap_color=c("navy","gray85","orangered1")
+    #heatmap_color=c("navy","gray85","orangered1")
+    heatmap_color=c("navy","gray85","navy")
     limHM=c(0,1)
     plotInfo=list(margins=c(5,.2),cexRow=0.2,cexCol=0.2,cexRowSide=1,cexColSide=.7,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
     if (outputFormat=="png") plotInfo$cexColSide=1.5
