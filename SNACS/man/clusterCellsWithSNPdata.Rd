@@ -21,5 +21,5 @@ clusterCellsWithSNPdata(
 A SNACSList object
 }
 \description{
-Cluster cells, where the number of clusters is the number of hashes, using the mutation data. Then rank the SNPs in the order that best separates into those clusters. Generate heatmap of the mutation data with the ranked SNPs.
+Cluster cells, where the number of clusters is the number of constituent samples, using the mutation data with the selected SNPs. Generate heatmap of the mutation data.
 }

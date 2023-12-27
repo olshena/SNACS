@@ -199,11 +199,10 @@ filterData=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCel
 #' Impute missing mutations in SNACSList object.
 #'
 #' @param snacsObj SNACSList object
-#' @param seed Integer. Not implemented. Seed for generating random number. Default is 12345
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-imputeMissingMutations=function(snacsObj,seed=12345,verbose=FALSE) {
+imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     timeStamp=Sys.time()
 
     #if (is.na(match("filtered",snacsObj[["processLevels"]]))) stop("Run getBestSNPs() before imputing data\n")
@@ -219,7 +218,6 @@ imputeMissingMutations=function(snacsObj,seed=12345,verbose=FALSE) {
     cellNames=colnames(x)
     rm(datThis)
     x=t(x)
-    #set.seed(seed)
     x=VIM::kNN(x,k=5,imp_var=F)
     x=as.matrix(x); x=t(x)
     datThis=matrix(nrow=nrow(x),ncol=ncol(x),dimnames=list(rownames(x),cellNames))

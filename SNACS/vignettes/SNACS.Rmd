@@ -154,7 +154,7 @@ snacsObj$annCell[1:4,]
 Custom cell and SNP annotations can be added to the heatmaps. Here the heatmap of the best SNPS are annotated with color bars for the hash calls along with the clusters from the first round of clustering, and the hash antibody measures.
 The parameter "outputFormat" can be used to save the heatmap in "pdf" or "png" format. The output is then saved in "../output" folder.
 
-```{r, fig.show = "hold", out.width = "50%", echo = TRUE}
+```{r, fig.show = "hold", out.width = "100%", echo = TRUE}
 
 createHeatmap(snacsObj,
    cell_anno_var=c("snacsPlusDoubletDCall","doubletDCall","hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"),

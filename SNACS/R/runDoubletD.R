@@ -324,8 +324,7 @@ runDoubletD <- function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
 
     #logprobs <- cbind(logprobs_1, logprobs_2)
 
-    ###Calculate the final call as doublet vs singlet and output to doublet_result matrix
-    ###doublet_result still needs to be added to SNACS_result as an OR filter
+    ## Calculate the final call as doublet vs singlet and output to doublet_result vector
     doublet_result <- ifelse(logprobs_2 - logprobs_1 > threshold, "Doublet", "Singlet")
     names(doublet_result) <- rownames(df_total)
     
@@ -341,7 +340,7 @@ runDoubletD <- function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
 ####################################################################
 #' Add doubletD calls to SNACS hash calls
 #'
-#' First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls made a doublet. The result is stored in the column "snacsPlusDoubletDCall" in the "annCell" table of the SNACS object.
+#' First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign as a doublet those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls. The result is stored in the column "snacsPlusDoubletDCall" in the "annCell" table of the SNACS object.
 #'
 #' @param snacsObj SNACSList object
 #' @return A SNACSList object
