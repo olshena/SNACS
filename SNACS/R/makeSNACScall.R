@@ -101,7 +101,7 @@ getBestSNPs=function(snacsObj,numSNP=3,backgndThreshold=0.95,cellProportionAbove
 #' Cluster cells, where the number of clusters is the number of constituent samples, using the mutation data with the selected SNPs. Generate heatmap of the mutation data.
 #'
 #' @param snacsObj SNACSList object
-#' @param clustMethod Character. Clustering method for ranking SNPs. Options are "hclust" and "skmean". Default is "hclust"
+#' @param clustMethod Character. Clustering method. Options are "hclust" and "skmean". Default is "hclust"
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @return A SNACSList object
 #' @export
@@ -118,10 +118,10 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
     subsetSnpFlag=""
     subsetCellFlag=""
     
-    outputFileName=paste0("heatmap",ifelse(clustMethod=="skmean","_skmean",""),"_pvRanked_",snacsObj$exptName)
-    if (outputFormat=="") h_title="Heatmap of ranked SNPs" else h_title=NULL
+    outputFileName=paste0("heatmap",ifelse(clustMethod=="skmean","_skmean",""),"_bestSNPs_",snacsObj$exptName)
+    if (outputFormat=="") h_title="Heatmap of best SNPs" else h_title=NULL
     
-    cell_anno_var_rankedSNPs=snacsObj$annHash$hashNames
+    cell_anno_var_bestSNPs=snacsObj$annHash$hashNames
     
     ################################################
     ## Compute cosine cross-distances between the rows of matrices
@@ -260,7 +260,7 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
     }
 
     ################################################
-    names(annCellThis)[match(paste0("cluster_",clustMethod),names(annCellThis))]=paste0("clustRankedSNPs_",clustMethod)
+    names(annCellThis)[match(paste0("cluster_",clustMethod),names(annCellThis))]=paste0("clustBestSNPs_",clustMethod)
 
     snacsObj[["mut"]]=datThis
     snacsObj[["hashes"]]=hashesThis
@@ -268,7 +268,7 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
     snacsObj[["annSNP"]]=annSNPthis
 
     ################################################
-    clustObj=createHeatmap(snacsObj,cell_anno_var=cell_anno_var_rankedSNPs,col_dend=T,row_dend=F,h_title=h_title,outputFormat=outputFormat,outputFileName=outputFileName)
+    clustObj=createHeatmap(snacsObj,cell_anno_var=cell_anno_var_bestSNPs,col_dend=T,row_dend=F,h_title=h_title,outputFormat=outputFormat,outputFileName=outputFileName)
     snacsObj[["hclustObj_bestSNPs"]]=clustObj$colClust
 
     ################################################
@@ -277,10 +277,10 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
 
 ####################################################################
 ####################################################################
-#' Make hash calls
+#' Make SNACS calls
 #'
-#' Make hash calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned one of the hash IDs (a single sample) or a set of hash IDs (a multiplet), when it is a mixture of samples. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. The clusters based on mutation data give a rough assignment of hash calls. The hash calls are refined by looking at the antibody data of the cells which cluster together. The cell clusters obtained from running "clusterCellsWithSNPdata" are split into sub-clusters and each sub-cluster is assigned a hash ID if enough cells in that group have a signal above the background for the corresponding hash. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops when it reaches a minimum number of cells. The singlet and multiplet assignments are made to each of the sub-clusters using the hash antibody data. The antibody expression for a sample is expected to have a bimodal distribution representing a background, which are cells not from the sample, and a foreground, which are cells belonging to the sample. The background distribution is estimated by considering the data from the lower bound till the mode of the background and generating a symmetrical distribution from it. Then, the empirical cumulative distribution function of this distribution becomes the estimated background distribution. A sub-cluster is assigned the ID of each sample which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThreshold", of the hash background. A sub-cluster with multiple samples above their corresponding hash background is considered a multiplet. The result is stored in the column "hashCallRnd1" in the "annCell" table of the SNACS object.
-#' The above hash calls are refined by detecting narrow regions of multiplets. The cells, ordered as in the clusters above, are segmented by applying circular binary segmentation (CBS) on the distance to the centroid of the hash call groups. A segment is assigned the ID of each hash which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThresRnd2", of the hash background. A segment with multiple hashes above their corresponding hash background is considered a multiplet. Only narrow segments, specified by "maxClustSizeRnd2", are considered. The result is stored in the column "hashCallRnd2" in the "annCell" table of the SNACS object
+#' Make SNACS calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make SNACS calls. Each cell is assigned one of the hash IDs (a single sample) or a set of hash IDs (a multiplet), when it is a mixture of samples. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. The clusters based on mutation data give a rough assignment of SNACS calls. The SNACS calls are refined by looking at the antibody data of the cells which cluster together. The cell clusters obtained from running "clusterCellsWithSNPdata" are split into sub-clusters and each sub-cluster is assigned a hash ID if enough cells in that group have a signal above the background for the corresponding hash. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops when it reaches a minimum number of cells. The singlet and multiplet assignments are made to each of the sub-clusters using the hash antibody data. The antibody expression for a sample is expected to have a bimodal distribution representing a background, which are cells not from the sample, and a foreground, which are cells belonging to the sample. The background distribution is estimated by considering the data from the lower bound till the mode of the background and generating a symmetrical distribution from it. Then, the empirical cumulative distribution function of this distribution becomes the estimated background distribution. A sub-cluster is assigned the ID of each sample which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThreshold", of the hash background. A sub-cluster with multiple samples above their corresponding hash background is considered a multiplet. The result is stored in the column "snacsRnd1" in the "annCell" table of the SNACS object.
+#' The above SNACS calls are refined by detecting narrow regions of multiplets. The cells, ordered as in the clusters above, are segmented by applying circular binary segmentation (CBS) on the distance to the centroid of the SNACS call groups. A segment is assigned the ID of each hash which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThresRnd2", of the hash background. A segment with multiple hashes above their corresponding hash background is considered a multiplet. Only narrow segments, specified by "maxClustSizeRnd2", are considered. The result is stored in the column "snacsRnd2" in the "annCell" table of the SNACS object
 #'
 #' @param snacsObj SNACSList object
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
@@ -291,19 +291,19 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
 #' @param clustComparePValue Numeric. P-value threshold to compare cluster pairs. Default is 10^-5
 #' @param maxClustSampleSize Numeric. Maximum number of cells in a cluster that will be used to compare. If more, then this number of cells will be sampled. Default is Inf
 #' @param clustCompareMethod Character. Test used to compare clusters. Default is t-test
-#' @param makeHashCallRnd2 Logical. Make second round of hash call to detect narrow multiplet regions. Default is TRUE
-#' @param maxClustSizeRnd2 Integer. Maximum number of cells required to be in a cluster for making second round of hash calls. Default is 100
-#' @param backgndThresRnd2 Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of hash calls. Default is 0.75. Range is 0-1
-#' @param dataTypeRnd2 Character. Type of data to be used for splitting the cells when making second round of hash calls. Default is euclidean distance of the cells to the cluster means from first round of hash calls
-#' @param cbsAlpha Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of hash calls. Default is 0.1
+#' @param makeSnacsCallRnd2 Logical. Make second round of SNACS calls to detect narrow multiplet regions. Default is TRUE
+#' @param maxClustSizeRnd2 Integer. Maximum number of cells required to be in a cluster for making second round of SNACS calls. Default is 100
+#' @param backgndThresRnd2 Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of SNACS calls. Default is 0.75. Range is 0-1
+#' @param dataTypeRnd2 Character. Type of data to be used for splitting the cells when making second round of SNACS calls. Default is euclidean distance of the cells to the cluster means from first round of SNACS calls
+#' @param cbsAlpha Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of SNACS calls. Default is 0.1
 #' @return A SNACSList object
 #' @export
-makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),makeHashCallRnd2=TRUE,maxClustSizeRnd2=100,backgndThresRnd2=0.75,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
+makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),makeSnacsCallRnd2=TRUE,maxClustSizeRnd2=100,backgndThresRnd2=0.75,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
 
     ## -----------------------------------
-    if (is.na(match("hclustObj_bestSNPs",names(snacsObj)))) stop("Run clusterCellsWithSNPdata() before making hash calls\n")
+    if (is.na(match("hclustObj_bestSNPs",names(snacsObj)))) stop("Run clusterCellsWithSNPdata() before making SNACS calls\n")
 
     ## -----------------------------------
     clustInfo=data.frame(id=snacsObj$annCell$id,t(snacsObj$hashes),stringsAsFactors=F)
@@ -346,18 +346,18 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
     }
     
     ###########################################################
-    ## Make hash call round 1
+    ## Make SNACS call round 1
     
-    clustInfo$hashCallRnd1="Multiplet"
+    clustInfo$snacsRnd1="Multiplet"
     grp=clustInfo$clustId
     grpUniq=sort(unique(grp))
     for (gId in 1:length(grpUniq)) {
         j=which(grp==grpUniq[gId])
         x=apply(hashMat[j,],2,mean,na.rm=T)
-        clustInfo$hashCallRnd1[j]=names(x)[which.max(x)]
+        clustInfo$snacsRnd1[j]=names(x)[which.max(x)]
     }
 
-    hashCallRnd1=clustInfo$hashCallRnd1
+    snacsRnd1=clustInfo$snacsRnd1
     
     clustObjThis=snacsObj$hclustObj_bestSNPs
     j=match(clustObjThis$label,clustInfo$id)
@@ -428,7 +428,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
         for (sampleId in snacsObj$annHash$hashNames) {
             if (round(mean(hashMatThis[j,sampleId]>hashBackgnd["thres",sampleId]),2)>=cellProportionAboveBackgnd) {inSamples=c(inSamples,sampleId)}
         }
-        hashCallRnd1[j]=paste(inSamples,collapse="_")
+        snacsRnd1[j]=paste(inSamples,collapse="_")
     }
     
     ## Mark cluster splits
@@ -448,7 +448,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
     subClustRnd1=x
 
     ## Distance to centroid
-    grp=hashCallRnd1
+    grp=snacsRnd1
     grpUniq=sort(unique(grp))
     centroid=matrix(nrow=ncol(hashMatThis),ncol=length(grpUniq),dimnames=list(colnames(hashMatThis),grpUniq))
     for (gId in 1:length(grpUniq)) {
@@ -468,13 +468,13 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
     )
 
     ###########################################################
-    ## Make hash call round 2
+    ## Make SNACS call round 2
     
-    if (makeHashCallRnd2) {
+    if (makeSnacsCallRnd2) {
         ## Detect and assign narrow regions as multiplets
         ## Make splits based on cbs on distance to centroids
         
-        cellId=which(hashCallRnd1%in%snacsObj$annHash$hashNames)
+        cellId=which(snacsRnd1%in%snacsObj$annHash$hashNames)
         #x1=hashMatThis[clustObjThis$order,]
         x1=t(dist2centroidMat[,clustObjThis$order])
         x2=DNAcopy::CNA(genomdat=x1,
@@ -484,7 +484,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
         x3=x3$output
         x=rep(NA,nrow(x1))
         names(x)=clustObjThis$label[clustObjThis$order]
-        grp=hashCallRnd1[clustObjThis$order]
+        grp=snacsRnd1[clustObjThis$order]
         grpUniq=snacsObj$annHash$hashNames
         for (gId in 1:length(grpUniq)) {
             j1=range(which(grp==grpUniq[gId]))
@@ -499,7 +499,7 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
         x=x[match(clustObjThis$label,names(x))]
         x=x[cellId]
 
-        grp=hashCallRnd1
+        grp=snacsRnd1
         #x[is.na(x)]="0"
         for (k in unique(x[!is.na(x)])) {
             j=cellId[which(x==k)]
@@ -510,12 +510,12 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
             }
             grp[j]=paste(inSamples,collapse="_")
         }
-        hashCallRnd2=grp
+        snacsRnd2=grp
 
         ## Mark cluster splits
         cellId=1:nrow(clustInfoThis)
-        cellId=which(hashCallRnd1%in%snacsObj$annHash$hashNames)
-        z1=rep("0",length(hashCallRnd1)); z1[cellId]=x
+        cellId=which(snacsRnd1%in%snacsObj$annHash$hashNames)
+        z1=rep("0",length(snacsRnd1)); z1[cellId]=x
         j=clustObjThis$order
         grp=as.integer(as.factor(z1[j]))
         j=which(diff(grp)!=0)
@@ -530,34 +530,34 @@ makeHashCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=
         }
         clustSplitRnd2=clustSplitRnd2[match(clustInfo$id,clustObjThis$label[clustObjThis$order])]
         subClustRnd2=z1
-    } ## end of makeHashCallRnd2
+    } ## end of makeSnacsCallRnd2
 
     ###########################################################
     ###########################################################
     
-    snacsObj$annCell$hashCallRnd1=""
+    snacsObj$annCell$snacsRnd1=""
     j=match(snacsObj$hclustObj_bestSNPs$label,snacsObj$annCell$id); j1=which(!is.na(j)); j2=j[j1]
-    snacsObj$annCell$hashCallRnd1[j2]=hashCallRnd1[j1]
-    snacsObj$annCell$hashCallRnd1[snacsObj$hashCallRnd1==""]=NA
+    snacsObj$annCell$snacsRnd1[j2]=snacsRnd1[j1]
+    snacsObj$annCell$snacsRnd1[snacsObj$snacsRnd1==""]=NA
     snacsObj$annCell$clustSplitRnd1=clustSplitRnd1
     snacsObj$annCell$subClustRnd1=subClustRnd1
     snacsObj$centroid=centroid
     snacsObj$dist2centroidMat=dist2centroidMat
-    if (makeHashCallRnd2) {
-        snacsObj$annCell$hashCallRnd2=""
-        snacsObj$annCell$hashCallRnd2[j2]=hashCallRnd2[j1]
-        snacsObj$annCell$hashCallRnd2[snacsObj$hashCallRnd2==""]=NA
+    if (makeSnacsCallRnd2) {
+        snacsObj$annCell$snacsRnd2=""
+        snacsObj$annCell$snacsRnd2[j2]=snacsRnd2[j1]
+        snacsObj$annCell$snacsRnd2[snacsObj$snacsRnd2==""]=NA
         snacsObj$annCell$clustSplitRnd2=clustSplitRnd2
         snacsObj$annCell$subClustRnd2=subClustRnd2
     }
     
-    cat('"hashCall" column(s) added to "annCell" table in SNACS object\n',sep="")
+    cat('"snacs" column(s) added to "annCell" table in SNACS object\n',sep="")
     
     cat("\n")
-    if (makeHashCallRnd2) {hashCall=hashCallRnd2
-    } else {hashCall=hashCallRnd1}
-    print(table(hashCall,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL,dnn=list("hash calls",paste0("Cell clusters with best SNPs"))))
-    rm(hashCall)
+    if (makeSnacsCallRnd2) {snacsCall=snacsRnd2
+    } else {snacsCall=snacsRnd1}
+    print(table(snacsCall,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL,dnn=list("SNACS calls",paste0("Cell clusters with best SNPs"))))
+    rm(snacsCall)
 
     invisible(snacsObj)
 }
@@ -603,20 +603,20 @@ clusterSampleWithAntibodyData=function(snacsObj,backgndThreshold=0.95,cellPropor
         hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
     }
     
-    hashCallThis=rep("",nrow(snacsObj$annCell))
+    snacsCallThis=rep("",nrow(snacsObj$annCell))
     hashMatThis=hashMat
-    j=1:length(hashCallThis)
+    j=1:length(snacsCallThis)
     for (sampleId in snacsObj$annHash$hashNames) {
         if (is.na(backgndThreshold)) {
             jj=which(hashMatThis[,sampleId]>=hashThreshold)
         } else {
             jj=which(hashMatThis[,sampleId]>hashBackgnd["thres",sampleId])
         }
-        if (length(jj)!=0) hashCallThis[jj]=paste0(hashCallThis[jj],"_",sampleId)
+        if (length(jj)!=0) snacsCallThis[jj]=paste0(snacsCallThis[jj],"_",sampleId)
     }
-    hashCallThis=sub("^_", "",hashCallThis)
+    snacsCallThis=sub("^_", "",snacsCallThis)
     
-    snacsObj$annCell$hashClust=hashCallThis
+    snacsObj$annCell$hashClust=snacsCallThis
 
     invisible(snacsObj)
 }

@@ -13,7 +13,7 @@ clusterCellsWithSNPdata(
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{clustMethod}{Character. Clustering method for ranking SNPs. Options are "hclust" and "skmean". Default is "hclust"}
+\item{clustMethod}{Character. Clustering method. Options are "hclust" and "skmean". Default is "hclust"}
 
 \item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
 }

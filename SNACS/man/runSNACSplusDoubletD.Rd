@@ -13,5 +13,5 @@ runSNACSplusDoubletD(snacsObj)
 A SNACSList object
 }
 \description{
-First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign as a doublet those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls. The result is stored in the column "snacsPlusDoubletDCall" in the "annCell" table of the SNACS object.
+First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign as a doublet those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls. The result is stored in the column "snacsPlusDoubletD" in the "annCell" table of the SNACS object.
 }

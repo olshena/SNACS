@@ -1,6 +1,6 @@
 Package: SNACS
-Title: Single Nucleotide Polymorphism (SNP) and Antibody-based Cell Sorting (SNACS)
-Version: 1.0.3.3
+Title: Single Nucleotide Polymorphism (SNP) and Antibody-Based Cell Sorting (SNACS)
+Version: 1.0.3.4
 Authors@R: 
     c(person("Ritu", "Roy", email="ritu.roy@ucsf.edu", role=c("aut", "cre"), comment=c(ORCID ="0000-0003-2065-7846")),person("Adam", "Olshen", email="adam.olshen@ucsf.edu", role=c("aut")))
 Description: Tool for demultiplexing single-cell DNA sequencing data using DNA sequencing data and hash antibody data.
@@ -16,7 +16,7 @@ Imports:
         heatmap4,
 	DNAcopy,
         DescTools
-Remotes: github::https://github.com/UCSF-CBI/heatmap4/tree/master
+Remotes: github::UCSF-CBI/heatmap4/heatmap4@master
 Depends: 
     R (>= 2.10)
 Suggests:

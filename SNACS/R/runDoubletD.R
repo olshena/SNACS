@@ -329,7 +329,7 @@ runDoubletD <- function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
     names(doublet_result) <- rownames(df_total)
     
     if (!is.null(snacsObj)) {
-        snacsObj$annCell$doubletDCall <- doublet_result
+        snacsObj$annCell$doubletD <- doublet_result
         invisible(snacsObj)
     } else {
         invisible(doublet_result)
@@ -340,24 +340,24 @@ runDoubletD <- function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
 ####################################################################
 #' Add doubletD calls to SNACS hash calls
 #'
-#' First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign as a doublet those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls. The result is stored in the column "snacsPlusDoubletDCall" in the "annCell" table of the SNACS object.
+#' First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign as a doublet those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls. The result is stored in the column "snacsPlusDoubletD" in the "annCell" table of the SNACS object.
 #'
 #' @param snacsObj SNACSList object
 #' @return A SNACSList object
 #' @export
 runSNACSplusDoubletD <- function(snacsObj) {
-    if (is.na(match("hashCallRnd1",names(snacsObj$annCell)))) stop("Run makeHashCall() before calling runSNACSplusDoubletD()\n")
+    if (is.na(match("snacsRnd1",names(snacsObj$annCell)))) stop("Run makeHashCall() before calling runSNACSplusDoubletD()\n")
     
     snacsObj=runDoubletD(snacsObj)
     
-    if ("hashCallRnd2"%in%names(snacsObj$annCell)) {
-        snacsObj$annCell$snacsPlusDoubletDCall=snacsObj$annCell$hashCallRnd2
+    if ("snacsRnd2"%in%names(snacsObj$annCell)) {
+        snacsObj$annCell$snacsPlusDoubletD=snacsObj$annCell$snacsRnd2
     } else {
-        snacsObj$annCell$snacsPlusDoubletDCall=snacsObj$annCell$hashCallRnd1
+        snacsObj$annCell$snacsPlusDoubletD=snacsObj$annCell$snacsRnd1
     }
-    snacsObj$annCell$snacsPlusDoubletDCall[which(snacsObj$annCell$snacsPlusDoubletDCall%in%snacsObj$annHash$hashNames & snacsObj$annCell$doubletDCall=="Doublet")]="Doublet"
+    snacsObj$annCell$snacsPlusDoubletD[which(snacsObj$annCell$snacsPlusDoubletD%in%snacsObj$annHash$hashNames & snacsObj$annCell$doubletD=="Doublet")]="Doublet"
 
-    cat('"doubletDCall" and "snacsPlusDoubletDCall" columns added to "annCell" table in SNACS object\n',sep="")
+    cat('"doubletD" and "snacsPlusDoubletD" columns added to "annCell" table in SNACS object\n',sep="")
     cat("\n")
     
     invisible(snacsObj)

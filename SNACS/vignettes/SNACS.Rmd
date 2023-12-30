@@ -85,13 +85,7 @@ snacsObj
 ```
 
 ## Cluster antibody data to select best SNPs to demultiplex hashes
-The cells are clustered based on mutation data. The clustering takes place in two steps. First, mutation data is clustered based on all SNPs. An intermediate heatmap is generated identifying the cell clusters representing the hashes and the SNPs ranked by how well they separate the clusters. Then a second round of clustering is performed to select SNPs which best separate the cell clusters from the first round. We can specify "pdf" or "png" format for the figures. The ouputs are then saved in the "../output" folder.
-
-The "heatmap of ranked SNPs" shows the 3 clusters, delineated in red, separating the cells from the 3 subjects after the first round of clustering of the example data. The continuous antibody data for each subject are shown as grey color bars.
-
-The "heatmap of best SNPs" shows the 3 clusters, delineated in red, after the second round of clustering of the example data. The color bar with the light blue, yellow and dark blue clusters shows the cluster designations from the first round of clustering. Again, the continuous antibody data are shown as grey color bars.
-
-The cluster designations from the first round of clustering are saved in the column "clustRankedSNPs_hclust" of the "annCell" attribute of the "SNACSList" object. The output from the second round of clustering, which is an "hclust" object, is saved as the attribute "hclustObj_bestSNPs". This attribute is later used is making the hash calls.
+Group cells into constituent samples based on hash antibody data. Select the best SNPs that separate the cell groups using the mutation data.
 
 ```{r, echo = TRUE}
 
@@ -101,7 +95,7 @@ snacsObj
 ```
 
 ## Impute missing mutations
-Currently, SNACS package cannot work on mutation data with missing values. We can impute missing mutations as follows.
+Currently, SNACS package cannot work on mutation data with missing values.SNACS imputes missing mutations using k nearest neighbor approach.
 
 ```{r, echo = TRUE}
 
@@ -110,14 +104,8 @@ snacsObj
 
 ```
 
-## Cluster mutation data to select best SNPs to demultiplex hashes
-The cells are clustered based on mutation data. The clustering takes place in two steps. First, mutation data is clustered based on all SNPs. An intermediate heatmap is generated identifying the cell clusters representing the hashes and the SNPs ranked by how well they separate the clusters. Then a second round of clustering is performed to select SNPs which best separate the cell clusters from the first round. We can specify "pdf" or "png" format for the figures. The ouputs are then saved in the "../output" folder.
-
-The "heatmap of ranked SNPs" shows the 3 clusters, delineated in red, separating the cells from the 3 subjects after the first round of clustering of the example data. The continuous antibody data for each subject are shown as grey color bars.
-
-The "heatmap of best SNPs" shows the 3 clusters, delineated in red, after the second round of clustering of the example data. The color bar with the light blue, yellow and dark blue clusters shows the cluster designations from the first round of clustering. Again, the continuous antibody data are shown as grey color bars.
-
-The cluster designations from the first round of clustering are saved in the column "clustRankedSNPs_hclust" of the "annCell" attribute of the "SNACSList" object. The output from the second round of clustering, which is an "hclust" object, is saved as the attribute "hclustObj_bestSNPs". This attribute is later used is making the hash calls.
+## Cluster cells based on the SNP data
+Cluster cells, where the number of clusters is the number of constituent samples, using the mutation data with the selected SNPs. Generate heatmap of the mutation data.
 
 ```{r, echo = TRUE}
 
@@ -126,39 +114,39 @@ snacsObj
 
 ```
 
-## Make hash calls
-This is the final step for demultiplexing the hashes. The cluster information from the mutation data and the hash antibody data are used to make hash calls. Each cell is assigned the ID of one of the hashes or called a multiplet when it is a mixture of hashes. Expecting the mutation data of cells with similar hash profiles to cluster together, the cells are split into sub-clusters and each cluster is assigned a hash ID if enough proportion of cells in the cluster have signal above the background of that hash. The hash calls are saved in the "hashCallRnd1" column in the "annCell" table of the SNACS object. A refined version of the hash calls are saved in the "hashCallRnd2" column in the "annCell" table where regions of multiplets too narrow to be picked up in the first round are marked.
+## Make SNACS calls
+This is the final step for demultiplexing the hashes. Make SNACS calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make SNACS calls. Each cell is assigned one of the hash IDs (a single sample) or a set of hash IDs (a multiplet), when it is a mixture of samples. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. The clusters based on mutation data give a rough assignment of SNACS calls. The SNACS calls are refined by looking at the antibody data of the cells which cluster together. The cell clusters obtained from running "clusterCellsWithSNPdata" are split into sub-clusters and each sub-cluster is assigned a hash ID if enough cells in that group have a signal above the background for the corresponding hash. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops when it reaches a minimum number of cells. The singlet and multiplet assignments are made to each of the sub-clusters using the hash antibody data. The antibody expression for a sample is expected to have a bimodal distribution representing a background, which are cells not from the sample, and a foreground, which are cells belonging to the sample. The background distribution is estimated by considering the data from the lower bound till the mode of the background and generating a symmetrical distribution from it. Then, the empirical cumulative distribution function of this distribution becomes the estimated background distribution. A sub-cluster is assigned the ID of each sample which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThreshold", of the hash background. A sub-cluster with multiple samples above their corresponding hash background is considered a multiplet. The result is stored in the column "snacsRnd1" in the "annCell" table of the SNACS object. These calls are refined by detecting narrow regions of multiplets. The cells, ordered as in the clusters above, are segmented by applying circular binary segmentation (CBS) on the distance to the centroid of the SNACS call groups. A segment is assigned the ID of each hash which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThresRnd2", of the hash background. A segment with multiple hashes above their corresponding hash background is considered a multiplet. Only narrow segments, specified by "maxClustSizeRnd2", are considered. The result is stored in the column "snacsRnd2" in the "annCell" table of the SNACS object
 
 ```{r, echo = TRUE}
 
-snacsObj=makeHashCall(snacsObj)
+snacsObj=makeSnacsCall(snacsObj)
 
-## The hash calls are saved in the "annCell" table in the SNACSList object
+## The SNACS calls are saved in the "annCell" table in the SNACSList object
 snacsObj$annCell[1:4,]
 
 ```
 
 ## Refine multiplet calls with doubletD
-The hash calls can be further refined by applying doubletD method. Doublets identified by doubletD will be added to the second round of hash calls. These calls are saved in the "snacsPlusDoubletDCall" column in the "annCell" table of the SNACS object.
+The SNACS calls can be further refined by applying doubletD method. Doublets identified by doubletD will be added to the second round of SNACS calls. These calls are saved in the "snacsPlusDoubletD" column in the "annCell" table of the SNACS object.
 
 ```{r, echo = TRUE}
 
 snacsObj=runSNACSplusDoubletD(snacsObj)
 
-## The SNACS plus doubletD based hash calls are saved in the "annCell" table in the SNACSList object
+## The SNACS plus doubletD based SNACS calls are saved in the "annCell" table in the SNACSList object
 snacsObj$annCell[1:4,]
 
 ```
 
 ## Annotate heatmap
-Custom cell and SNP annotations can be added to the heatmaps. Here the heatmap of the best SNPS are annotated with color bars for the hash calls along with the clusters from the first round of clustering, and the hash antibody measures.
+Custom cell and SNP annotations can be added to the heatmaps. Here the heatmap of the best SNPS are annotated with color bars for the SNACS calls along with the clusters from the first round of clustering, and the hash antibody measures.
 The parameter "outputFormat" can be used to save the heatmap in "pdf" or "png" format. The output is then saved in "../output" folder.
 
 ```{r, fig.show = "hold", out.width = "100%", echo = TRUE}
 
 createHeatmap(snacsObj,
-   cell_anno_var=c("snacsPlusDoubletDCall","doubletDCall","hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"clustRankedSNPs_hclust"),
-   cell_anno_name=c("snacs+DD","doubletD","hashCallRnd2","hashCallRnd1",snacsObj$annHash$hashNames,"cluster"),
+   cell_anno_var=c("snacsPlusDoubletD","doubletD","snacsRnd2","snacsRnd1",snacsObj$annHash$hashNames,"clustBestSNPs_hclust"),
+   cell_anno_name=c("snacs+DD","doubletD","snacsRnd2","snacsRnd1",snacsObj$annHash$hashNames,"cluster"),
    outputFormat="")
 
 ```
