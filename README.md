@@ -1,27 +1,24 @@
 # SNACS
 
-SNACS is a package in R. It demuliplexes samples of single cell mutation data using single cell mutation data and hash antibody data.
+Single Nucleotide Polymorphism (SNP) and Antibody-Based Cell Sorting (SNACS) is an R package for demultiplexing single-cell DNA sequencing data using DNA sequencing data and hash antibody data.
 
-To install "SNACS" package we will need "devtools" package.
+'SNACS' package can be installed as follows:
 
-> library(devtools)
+Launch R.
 
-"SNACS" is dependent on "heatmap4" which is available on GitHub.
+'SNACS' is dependent on 'heatmap4'. 'heatmap4' is available in r-universe. In order to automatically install 'heatmap4' with 'SNACS', the repository of the former package has to be specified before installing 'SNACS'.
+> options(repos = c(
+    rituroy = 'https://rituroy.r-universe.dev',
+    CRAN = 'https://cloud.r-project.org'))
 
-Run this to install "heatmap4".
-> install_github("UCSF-CBI/heatmap4/heatmap4")
+Then install 'SNACS'.
+> remotes::install_github('olshena/SNACS',subdir='/SNACS',build_vignettes=TRUE)
 
-or 
-> install_github("UCSF-CBI/heatmap4/heatmap4",auth_token="abc")
+'heatmap4' can also be installed directly from 'rituroy' universe.
+> install.packages('heatmap4', repos = 'https://github.com/rituroy/heatmap4')
 
-Run this to install "SNACS".
-> install_github("olshena/SNACS/SNACS",build_vignettes=TRUE)
-
-or
-> install_github("olshena/SNACS/SNACS",build_vignettes=TRUE,auth_token="abc")
-
-Load the package.
+Load 'SNACS'.
 > require(SNACS)
 
-This will give a demo of the package.
-> vignette("SNACS")
+See a demo of 'SNACS'.
+> vignette('SNACS')

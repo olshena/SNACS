@@ -16,7 +16,6 @@ Imports:
         heatmap4,
 	DNAcopy,
         DescTools
-Remotes: github::rituroy/heatmap4
 Depends: 
     R (>= 3.5.0)
 Suggests:
