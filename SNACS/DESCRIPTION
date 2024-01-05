@@ -1,9 +1,9 @@
 Package: SNACS
 Title: Single Nucleotide Polymorphism (SNP) and Antibody-Based Cell Sorting (SNACS)
-Version: 1.0.3.4
-Authors@R: 
-    c(person("Ritu", "Roy", email="ritu.roy@ucsf.edu", role=c("aut", "cre"), comment=c(ORCID ="0000-0003-2065-7846")),person("Adam", "Olshen", email="adam.olshen@ucsf.edu", role=c("aut")))
+Version: 1.0.3.5
+Author: Ritu Roy <ritu.roy@ucsf.edu>, Adam Olshen <adam.olshen@ucsf.edu>
 Description: Tool for demultiplexing single-cell DNA sequencing data using DNA sequencing data and hash antibody data.
+Maintainer: Ritu Roy <ritu.roy@ucsf.edu>
 License: GPL (>=2)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -16,9 +16,9 @@ Imports:
         heatmap4,
 	DNAcopy,
         DescTools
-Remotes: github::UCSF-CBI/heatmap4/heatmap4@master
+Remotes: github::rituroy/heatmap4
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5.0)
 Suggests:
     sf,
     knitr,
