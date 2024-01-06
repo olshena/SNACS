@@ -43,7 +43,7 @@ for (numSNP in numSNPvec) {
         cat("\n\n----------------- \n")
         print(snacsObj)
         
-        snacsObj <- SNACS::getBestSNPs(snacsObj,numSNP=numSNP,outputFormat=outputFormat)
+        snacsObj <- SNACS::getBestSNPs(snacsObj,numSNP=numSNP,backgndThreshold=NA,outputFormat=outputFormat)
         print(snacsObj)
         save(snacsObj,file=paste0(dirData,"snacsObj_getBestSNPs_",snacsObj$exptName,".RData"))
     }
