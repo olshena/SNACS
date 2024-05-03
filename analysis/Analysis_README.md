@@ -96,7 +96,7 @@ The **imputeMissingMutations function** imputes missing data prior to hierarchic
 snacsObj <- imputeMissingMutations(snacsObj=snacsObj)
 ```
 
-The **clusterCellsWithSNPdata function** performs hierarchical clustering where the number of cells is the number of constituent samples using the imputated mutation data from the SNPs selected by the getBestSNPs function. The function also generates an initial heatmap showing the results of this clustering with the hash antibody distributions, providing a simple visualization of the clustering result. 
+The **clusterCellsWithSNPdata function** performs hierarchical clustering where the number of cells is the number of constituent samples using the imputated mutation data from the SNPs selected by the getBestSNPs function. The function also generates an initial heatmap showing the results of this clustering with the hash antibody distributions, providing a simple visualization of the clustering result. In the image below
 
 ```{r}
 outputFileName <- "Experiment5"
@@ -123,3 +123,5 @@ The **runSNACSplusDoubletD function** is an optional step for identifying double
 ```{r}
 snacsObj <- runSNACSplusDoubletD(snacsObj)
 ```
+
+The createHeatmap function provides 
