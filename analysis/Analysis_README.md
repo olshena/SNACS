@@ -41,7 +41,7 @@ rownames(depthAlt) <- variants
 colnames(depthAlt) <- barcodes
 ```
 
-Next, we create a SNACSlist object. A SNACSlist object is a simple list-based object that SNACS uses to store data. In addition to creating the SNACSlist object, the SNACSList function confirms the input data is in the correct format. The SNACSList object outputs the name of the experiment, the total number of SNPs, the total number of cells, and the number of hashes.
+Next, we create a SNACSlist object. A SNACSlist object is a simple list-based object that SNACS uses to store data. In addition to creating the SNACSlist object, the **SNACSList function** confirms the input data is in the correct format. The SNACSList object outputs the name of the experiment, the total number of SNPs, the total number of cells, and the number of hashes.
 
 ```{r}
 exptName <- "Experiment5"
@@ -60,7 +60,7 @@ SNACSList attributes: mut, hashes, exptName, depthTotal, depthAlt, annHash, annC
 Output files are saved in "../output" folder
 ```
 
-The SNACSlist object is then filtered to remove very low or very high frequency SNPs as these will be less informative for demultiplexing. The default values for this function remove any single cell with <40% of SNPs genotyped, any single SNP with <40% of single cells genotyped, all SNPs mutated in > 95% all single cells, and all SNPs mutated in <5% of all single cells. These parameters are optional arguments in the filterData function and can be adjusted. In the example below, the total number of SNPs decreased to 77, reflecting that many SNPs were unmutated (i.e., 0) in all single cells. The number of single cells remained the same, at 2651.
+The SNACSlist object is then filtered using the **filterData function** to remove very low or very high frequency SNPs as these will be less informative for demultiplexing. The default values for this function remove any single cell with <40% of SNPs genotyped, any single SNP with <40% of single cells genotyped, all SNPs mutated in > 95% all single cells, and all SNPs mutated in <5% of all single cells. These parameters are optional arguments in the filterData function and can be adjusted. In the example below, the total number of SNPs decreased to 77, reflecting that many SNPs were unmutated (i.e., 0) in all single cells. The number of single cells remained the same, at 2651.
 
 ```{r}
 snacsObj <- filterData(snacsObj=snacsObj)
@@ -72,4 +72,32 @@ No. of cells: 2651
 Hashes: TS.1, TS.2
 SNACSList attributes: mut, hashes, exptName, depthTotal, depthAlt, annHash, annCell, annSNP, processLevels
 Output files are saved in "../output" folder
+```
+The **getBestSNPs function** groups single cells into preliminary groups bashed in hash antibody data, and selects the best SNPs that separate the single cells into these groups. In Experiment 5, this step identified 6 distinguishing SNPs, which are stored in the annSNP dataframe in the SNACslist object.
+
+```{r}
+outputFormat <- "pdf"
+snacsObj <- getBestSNPs(snacsObj,outputFormat=outputFormat)
+```
+
+The **generateAntibodyDensityPlot function** generates plots of the hash antibody distrubtion. The actual antibody expression is plotted in black. To generate the expected bimodal hash antibody distribution, we fit a Gaussian distribution to the left-most actual distribution (red line) and reflect the data to the left of the mode about the mode. 
+
+
+```{r}
+generateAntibodyDensityPlot(snacsObj)
+```
+
+The **imputeMissingMutations function** imputes missing data prior to hierarchical clustering. 
+
+```{r}
+snacsObj <- imputeMissingMutations(snacsObj=snacsObj)
+```
+
+
+
+The clusterCellsWithSNPdata function 
+
+```{r}
+outputFileName <- "Experiment5"
+snacsObj <- clusterCellsWithSNPdata(snacsObj)
 ```
