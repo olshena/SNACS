@@ -96,7 +96,7 @@ The **imputeMissingMutations function** imputes missing data prior to hierarchic
 snacsObj <- imputeMissingMutations(snacsObj=snacsObj)
 ```
 
-The **clusterCellsWithSNPdata function** performs hierarchical clustering where the number of cells is the number of constituent samples using the imputated mutation data from the SNPs selected by the getBestSNPs function. The function also generates an initial heatmap showing the results of this clustering with the hash antibody distributions, providing a simple visualization of the clustering result. In the image below
+The **clusterCellsWithSNPdata function** performs hierarchical clustering where the number of cells is the number of constituent samples using the imputated mutation data from the SNPs selected by the getBestSNPs function. The function also generates an initial heatmap showing the results of this clustering with the hash antibody distributions, providing a simple visualization of the clustering result. In the image below, the 6 SNPS chosen by the getBestSNPs function are rows, and single cells are columns where dark blue indicates mutated cells (i.e., "1") and grey indicates unmutated (i.e., "0"). The distribution of the hash antibody signal are added as rows at the top of the heatmap. 
 
 ```{r}
 outputFileName <- "Experiment5"
@@ -124,4 +124,11 @@ The **runSNACSplusDoubletD function** is an optional step for identifying double
 snacsObj <- runSNACSplusDoubletD(snacsObj)
 ```
 
-The createHeatmap function provides 
+The **createHeatmap function** provides a final visualization of the SNACS output. In the image below, the 6 SNPS chosen by the getBestSNPs function are rows, and single cells are columns where dark blue indicates mutated cells (i.e., "1") and grey indicates unmutated (i.e., "0"). Rows at the top of the heatmap depict hash antibody signal and the outputs from hashCallRnd1, hashCallRnd2, and snacsPlusDoubletDCall from the makeSnacsCall function and runSNACSplusDoubletD function.
+
+```{r}
+createHeatmap(snacsObj,cell_anno_var=c("snacsPlusDoubletDCall","hashCallRnd2","hashCallRnd1", "TS.2", "TS.1"),
+              cell_anno_name=c("SNACSplusdoubletD ","HashCallRnd2 ","HashCallRnd1 ","Hash TS.2 ", "Hash TS.1 "),
+              col_dend=TRUE,row_dend=FALSE,outputFormat="")
+```
+<img src="SNACS5_Heatmap2.png" alt="Experiment 5 Heatmap with final calls" width="400"/>
