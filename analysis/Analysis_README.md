@@ -102,3 +102,10 @@ snacsObj <- clusterCellsWithSNPdata(snacsObj)
 ```
 
 <img src="SNACS5_Heatmap1.png" alt="Experiment 5 Heatmap after Clustering" width="400"/>
+
+The **makeSnacsCall function** assigns single cells to a single sample or multiplet. The cell cluster obtained from running clusterCellsWith SNPdata are split into sub-clusters, traversing down the hierarchical tree. Clusters are split if a significant difference is found when comparing the daughter nodes of any current node.  
+
+
+```{r}
+snacsObj <- makeSnacsCall(snacsObj)
+```
