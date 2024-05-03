@@ -31,6 +31,8 @@ mutMat[mutMat == 3] <- NA
 colnames(hashes) <- barcodes
 rownames(hashes) <- hashnames
 hashMat <- hashes
+hashMat <- hashMat[1:2, ]
+rownames(hashMat) <- c('TS.1', 'TS.2')
 
 depthTotal <- matrix(as.numeric(totaldepth), nrow = nrow(totaldepth), ncol = ncol(totaldepth))
 rownames(depthTotal) <- variants
@@ -103,9 +105,16 @@ snacsObj <- clusterCellsWithSNPdata(snacsObj)
 
 <img src="SNACS5_Heatmap1.png" alt="Experiment 5 Heatmap after Clustering" width="400"/>
 
-The **makeSnacsCall function** assigns single cells to a single sample or multiplet. The cell cluster obtained from running clusterCellsWith SNPdata are split into sub-clusters, traversing down the hierarchical tree. Clusters are split if a significant difference is found when comparing the daughter nodes of any current node.  
+The **makeSnacsCall function** assigns single cells to a single sample or multiplet. The cell cluster obtained from running clusterCellsWith SNPdata are split into sub-clusters. Clusters are split if a significant difference is found when comparing hash antibody signals of the the daughter nodes, and the process is stopped when no additional differences are found. 
+
+This function outputs a table of the number of cells assigned to each hash antibody. In Experiment 5 below, TS.1 is Sample 1, TS.2 is Sample 2, and TS.1_TS.2 is are multiples. This function also adds a new column, "hashCall" to the annCell data frame in the snacsObj, which details the final hash call for each single cell. 
 
 
 ```{r}
 snacsObj <- makeSnacsCall(snacsObj)
+
+hash calls     1    2
+  TS.1         0 1581
+  TS.1_TS.2  187   18
+  TS.2       735    0
 ```
