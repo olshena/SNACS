@@ -105,10 +105,9 @@ snacsObj <- clusterCellsWithSNPdata(snacsObj)
 
 <img src="SNACS5_Heatmap1.png" alt="Experiment 5 Heatmap after Clustering" width="400"/>
 
-The **makeSnacsCall function** assigns single cells to a single sample or multiplet. The cell cluster obtained from running clusterCellsWith SNPdata are split into sub-clusters. Clusters are split if a significant difference is found when comparing hash antibody signals of the the daughter nodes, and the process is stopped when no additional differences are found. 
+The **makeSnacsCall function** assigns single cells to a single sample or multiplet. This is done in 2 stages, or rounds. First, the cell cluster obtained from running clusterCellsWith SNPdata are split into sub-clusters. Clusters are split if a significant difference is found when comparing hash antibody signals of the the daughter nodes, and the process is stopped when no additional differences are found. A new column, "hashCallRnd1" is added to the annCell dataframe in the snacsObj with these results. Second, multiple detection is refined using circular binary segmentation. A new column, "hashCallRnd2" is added to the annCell dataframe in the snacsObj with these results.
 
-This function outputs a table of the number of cells assigned to each hash antibody. In Experiment 5 below, TS.1 is Sample 1, TS.2 is Sample 2, and TS.1_TS.2 is are multiples. This function also adds a new column, "hashCall" to the annCell data frame in the snacsObj, which details the final hash call for each single cell. 
-
+The makeSnacsCall function also outputs a table of the number of cells assigned to each hash antibody. In Experiment 5 below, TS.1 is Sample 1, TS.2 is Sample 2, and TS.1_TS.2 is are multiples. A final new column, "hashCall", is also added to the annCell dataframe in the snacsObj, which includes the final hash call for each single cell. 
 
 ```{r}
 snacsObj <- makeSnacsCall(snacsObj)
@@ -117,4 +116,10 @@ hash calls     1    2
   TS.1         0 1581
   TS.1_TS.2  187   18
   TS.2       735    0
+```
+
+The **runSNACSplusDoubletD function** is an optional step for identifying doublets based on total and alternate allele depth. If this function is run, the column "snacsPlusDoubletDCall" will be added to the annCell dataframe in the snacsObj detailing the combined results of doubletD and SNACS. 
+
+```{r}
+snacsObj <- runSNACSplusDoubletD(snacsObj)
 ```
