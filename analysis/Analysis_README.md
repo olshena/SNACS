@@ -86,6 +86,7 @@ The **generateAntibodyDensityPlot function** generates plots of the hash antibod
 ```{r}
 generateAntibodyDensityPlot(snacsObj)
 ```
+<img src="SNACS5_abdistribution.png" alt="Experiment 5 Ab Distribution" width="400"/>
 
 The **imputeMissingMutations function** imputes missing data prior to hierarchical clustering. 
 
