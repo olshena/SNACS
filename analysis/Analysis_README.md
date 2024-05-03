@@ -96,8 +96,9 @@ snacsObj <- imputeMissingMutations(snacsObj=snacsObj)
 
 The **clusterCellsWithSNPdata function** performs hierarchical clustering where the number of cells is the number of constituent samples using the imputated mutation data from the SNPs selected by the getBestSNPs function. The function also generates an initial heatmap showing the results of this clustering with the hash antibody distributions, providing a simple visualization of the clustering result. 
 
-
 ```{r}
 outputFileName <- "Experiment5"
 snacsObj <- clusterCellsWithSNPdata(snacsObj)
 ```
+
+<img src="SNACS5_Heatmap1.png" alt="Experiment 5 Heatmap after Clustering" width="400"/>
