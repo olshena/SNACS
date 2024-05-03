@@ -60,8 +60,16 @@ SNACSList attributes: mut, hashes, exptName, depthTotal, depthAlt, annHash, annC
 Output files are saved in "../output" folder
 ```
 
-The SNACSlist object is then filtered. 
+The SNACSlist object is then filtered to remove very low or very high frequency SNPs as these will be less informative for demultiplexing. The default values for this function remove any single cell with <40% of SNPs genotyped, any single SNP with <40% of single cells genotyped, all SNPs mutated in > 95% all single cells, and all SNPs mutated in <5% of all single cells. These parameters are optional arguments in the filterData function and can be adjusted. In the example below, the total number of SNPs decreased to 77, reflecting that many SNPs were unmutated (i.e., 0) in all single cells. The number of single cells remained the same, at 2651.
 
 ```{r}
 snacsObj <- filterData(snacsObj=snacsObj)
+
+An object of class "SNACSList"
+Experiment name: snacsExpt
+No. of SNPs: 77
+No. of cells: 2651
+Hashes: TS.1, TS.2
+SNACSList attributes: mut, hashes, exptName, depthTotal, depthAlt, annHash, annCell, annSNP, processLevels
+Output files are saved in "../output" folder
 ```
