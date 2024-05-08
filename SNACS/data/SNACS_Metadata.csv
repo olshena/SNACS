@@ -1,0 +1,18 @@
+﻿Experiment,Patient,Hash
+SNACS1,Patient A,TS-1
+,Patient A,TS-2
+SNACS2,Patient B,TS-2
+,Patient B,TS-3
+SNACS3,Patient C,TS-3
+,Patient C,TS-4
+SNACS4,Patient D,TS-1
+,,TS-4
+SNACS5,Patient A,TS-1
+,Patient B,TS-2
+SNACS6,Patient B,TS-2
+,Patient C,TS-3
+,Patient D,TS-4
+SNACS7,Patient A,TS-1
+,Patient B,TS-2
+,Patient C,TS-3
+,Patient D,TS-4
