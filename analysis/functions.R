@@ -15,25 +15,14 @@ setExptName <- function(snacsObj,exptName) {
 
 ## ------------------------------
 ## Get experiment infomation from SNACS metadata Excel file
-getExptInfoData <- function(fileName="SNACS Metadata.xlsx",dirName="../data/") {
-    library(readxl)
-    phen=readxl::read_xlsx(paste(dirName,fileName,sep=""),sheet=1)
-    phen=as.data.frame(phen,stringsAsFactors=F)
-    names(phen)[match(c("Run","Samples","Patient","Hash","Total Number Cells","Missing Genotype Data (Filtered)","Missing Genotype Data (Unfiltered)","Number of reads"),names(phen))]=
-        c("run","sample","patient","hash","numCell","missGenoFilt","missGenoUnfilt","numRead")
-    phen=phen[!is.na(phen$hash),c("run","sample","patient","hash","numCell","missGenoFilt","missGenoUnfilt","numRead")]
-    p1=which(!is.na(phen$run)); p2=c(p1[2:length(p1)]-1,nrow(phen))
-    for (p in 1:length(p1)) {
-        for (k in c("run","numCell","missGenoFilt","missGenoUnfilt","numRead")) phen[p1[p]:p2[p],k]=phen[p1[p],k]
-        j=which(is.na(phen$sample[p1[p]:p2[p]]))
-        if (length(j)!=0) for (k in c("sample","patient")) phen[p1[p]:p2[p],k]=phen[p1[p],k]
-
-    }
-    for (k in "numCell") phen[,k]=as.integer(phen[,k])
-    phen$hash=sub("-",".",phen$hash)
-    phen$patId=as.integer(as.factor(phen$patient))
-    phen$hashId=as.integer(as.factor(phen$hash))
-    phen=phen[!is.na(phen$numCell),]
+getExptInfoData <- function(fileName="SNACS_Metadata.csv") {
+phen = read.csv(fileName)
+phen=as.data.frame(phen,stringsAsFactors=F)
+names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
+        c("run","patient","hash")
+phen$hash=sub("-",".",phen$hash)
+phen$patId=as.integer(as.factor(phen$patient))
+phen$hashId=as.integer(as.factor(phen$hash))
 
     invisible(phen)
 }
