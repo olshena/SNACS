@@ -18,12 +18,13 @@ packageVersion("SNACS")
 
 ## ------------------------------
 ## Create SNACSList objects
-
 hashColors <- c("indianred2","green3","dodgerblue3","magenta3")
 dirInput <- "../data/data_sequenced/"
 dirOutput <- "../data/"
 file_path <- "SNACS5.genotypes.hdf5" 
 
+
+## Raw data can be imported directly from the h5 file 
 barcodes <- h5read(file_path, "/CELL_BARCODES")
 variants <- h5read(file_path, "/VARIANTS")
 genotypes <- h5read(file_path, "/GT")
