@@ -6,6 +6,7 @@
 \usage{
 clusterSampleWithAntibodyData(
   snacsObj,
+  minSampleSize = 100,
   bgndThresDetMethod = c("automatic", "manual", "default modes", "two modes"),
   backgndThreshold = 0.95,
   cellProportionBelowBackgndMode = 0.6,
@@ -17,6 +18,8 @@ clusterSampleWithAntibodyData(
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
+
+\item{minSampleSize}{Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a waring if below this number. Default is 100}
 
 \item{bgndThresDetMethod}{Character. Method for detecting threshold of background antibody distribution. Default is "automatic"}
 

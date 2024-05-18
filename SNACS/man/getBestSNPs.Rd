@@ -7,6 +7,7 @@
 getBestSNPs(
   snacsObj,
   numSNP = 3,
+  minSampleSize = 100,
   bgndThresDetMethod = c("automatic", "manual", "default modes", "two modes"),
   backgndThreshold = 0.95,
   cellProportionAboveBackgnd = 0.5,
@@ -22,6 +23,8 @@ getBestSNPs(
 \item{snacsObj}{SNACSList object}
 
 \item{numSNP}{Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3}
+
+\item{minSampleSize}{Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a waring if below this number. Default is 100}
 
 \item{bgndThresDetMethod}{Character. Method for detecting threshold of background antibody distribution. Default is "automatic"}
 
