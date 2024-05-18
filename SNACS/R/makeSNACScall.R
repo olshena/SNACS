@@ -6,19 +6,27 @@
 #'
 #' @param snacsObj SNACSList object
 #' @param numSNP Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3
+#' @param bgndThresDetMethod Character. Method for detecting threshold of background antibody distribution. Default is "automatic"
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
 #' @param cellProportionAboveBackgnd Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
+#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA
+#' @param bgndQuantileThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
+#' @param bgndQuantileThresRnd2 Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @return A SNACSList object
 #' @export
-getBestSNPs=function(snacsObj,numSNP=3,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {
+getBestSNPs=function(snacsObj,numSNP=3,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=NA,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png")) {
+    #snacsObj=snacsObj; numSNP=3; backgndThreshold=0.95; cellProportionAboveBackgnd=0.5; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; outputFormat=""
+    
+    bgndThresDetMethod=bgndThresDetMethod[1]
+    
     ## -----------------------------------
     if (is.na(match("filtered",snacsObj[["processLevels"]]))) stop("Run filterData() before selecting best SNPs\n")
 
     ## -----------------------------------
-    snacsObj=clusterSampleWithAntibodyData(snacsObj,backgndThreshold=backgndThreshold,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection)
+    snacsObj=clusterSampleWithAntibodyData(snacsObj,bgndThresDetMethod=bgndThresDetMethod,backgndThreshold=backgndThreshold,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection,hashThreshold=hashThreshold,bgndQuantileThreshold=bgndQuantileThreshold,bgndQuantileThresRnd2=bgndQuantileThresRnd2)
     generateAntibodyDensityPlot(snacsObj,backgndThreshold=backgndThreshold,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection,outputFormat=outputFormat)
 
     ## Association of mutation status of each SNP with each sample cluster pair
@@ -299,6 +307,9 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
 #' @return A SNACSList object
 #' @export
 makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),makeSnacsCallRnd2=TRUE,maxClustSizeRnd2=100,backgndThresRnd2=0.75,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
+    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionAboveBackgnd=0.5; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf; clustCompareMethod=c("t","hotelling"); makeSnacsCallRnd2=TRUE; maxClustSizeRnd2=100; backgndThresRnd2=0.75; dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"); cbsAlpha=0.1
+    
+    
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
 
@@ -329,20 +340,27 @@ makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd
         }
     }
     
-    hashBackgnd=matrix(nrow=4,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres","thresRnd2"),snacsObj$annHash$hashNames))
-    for (k in 1:ncol(hashMat)) {
-        x=stats::density(hashMat[,k],bw="SJ",na.rm=T)
-        xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
-        xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
-        k1=which.max(x$y)
-        if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
-        xx=x$x[k1]
-        x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
-        hashBackgndData=x2
-        hashBackgndECDF=stats::ecdf(hashBackgndData)
-        x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
-        ecdfbg=1-hashBackgndECDF(x2)
-        hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
+    ## --------------------------------------
+    ## --------------------------------------
+    
+    if (F) {
+        annHashBackgnd=matrix(nrow=4,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres","thresRnd2"),snacsObj$annHash$hashNames))
+        for (k in 1:ncol(hashMat)) {
+            x=stats::density(hashMat[,k],bw="SJ",na.rm=T)
+            xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
+            xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
+            k1=which.max(x$y)
+            if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
+            xx=x$x[k1]
+            x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
+            hashBackgndData=x2
+            hashBackgndECDF=stats::ecdf(hashBackgndData)
+            x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
+            ecdfbg=1-hashBackgndECDF(x2)
+            annHashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
+        }
+    } else {
+        annHashBackgnd=snacsObj$annHashBackgnd
     }
     
     ###########################################################
@@ -426,7 +444,7 @@ makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd
         j=cellId[which(x==k)]
         inSamples=c()
         for (sampleId in snacsObj$annHash$hashNames) {
-            if (round(mean(hashMatThis[j,sampleId]>hashBackgnd["thres",sampleId]),2)>=cellProportionAboveBackgnd) {inSamples=c(inSamples,sampleId)}
+            if (round(mean(hashMatThis[j,sampleId]>annHashBackgnd["thres",sampleId]),2)>=cellProportionAboveBackgnd) {inSamples=c(inSamples,sampleId)}
         }
         snacsRnd1[j]=paste(inSamples,collapse="_")
     }
@@ -487,14 +505,17 @@ makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd
         grp=snacsRnd1[clustObjThis$order]
         grpUniq=snacsObj$annHash$hashNames
         for (gId in 1:length(grpUniq)) {
-            j1=range(which(grp==grpUniq[gId]))
-            x2=rep(NA,nrow(x1))
-            p1=1
-            for (k in which(x3$ID==grpUniq[gId])) {
-                x2[x3$loc.start[k]:x3$loc.end[k]]=p1
-                p1=p1+1
+            j=which(grp==grpUniq[gId])
+            if (length(j)!=0) {
+                j1=range(j,na.rm=T)
+                x2=rep(NA,nrow(x1))
+                p1=1
+                for (k in which(x3$ID==grpUniq[gId])) {
+                    x2[x3$loc.start[k]:x3$loc.end[k]]=p1
+                    p1=p1+1
+                }
+                x[j1[1]:j1[2]]=paste0(grpUniq[gId],"_",x2[j1[1]:j1[2]])
             }
-            x[j1[1]:j1[2]]=paste0(grpUniq[gId],"_",x2[j1[1]:j1[2]])
         }
         x=x[match(clustObjThis$label,names(x))]
         x=x[cellId]
@@ -506,7 +527,7 @@ makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd
             if (length(j)>maxClustSizeRnd2) next
             inSamples=c()
             for (sampleId in snacsObj$annHash$hashNames) {
-                if (round(mean(hashMatThis[j,sampleId]>hashBackgnd["thresRnd2",sampleId]),2)>=cellProportionAboveBackgnd) {inSamples=c(inSamples,sampleId)}
+                if (round(mean(hashMatThis[j,sampleId]>annHashBackgnd["thresRnd2",sampleId]),2)>=cellProportionAboveBackgnd) {inSamples=c(inSamples,sampleId)}
             }
             grp[j]=paste(inSamples,collapse="_")
         }
@@ -569,12 +590,19 @@ makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd
 #' Assign sample IDs to cells based on hash antibody data
 #'
 #' @param snacsObj SNACSList object
+#' @param bgndThresDetMethod Character. Method for detecting threshold of background antibody distribution. Default is "automatic"
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
-#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. Default is 0.5. Used if backgndThreshold = NA
+#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA
+#' @param bgndQuantileThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
+#' @param bgndQuantileThresRnd2 Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @export
-clusterSampleWithAntibodyData=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5) {
+clusterSampleWithAntibodyData=function(snacsObj,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=NA,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA) {
+    #snacsObj=snacsObj; bgndThresDetMethod="automatic"; backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; hashThreshold=NA; bgndQuantileThreshold=NA; bgndQuantileThresRnd2=NA
+
+    bgndThresDetMethod=bgndThresDetMethod[1]
+    
     ## --------------------------------------
     dirOutput="../output/hashPairPlot/"
     if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
@@ -587,39 +615,70 @@ clusterSampleWithAntibodyData=function(snacsObj,backgndThreshold=0.95,cellPropor
     ## --------------------------------------
     ## --------------------------------------
 
-    hashBackgnd=matrix(nrow=4,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres","thresRnd2"),snacsObj$annHash$hashNames))
-    for (k in 1:ncol(hashMat)) {
-        x=stats::density(hashMat[,k],bw="SJ",na.rm=T)
-        xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
-        xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
-        k1=which.max(x$y)
-        if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
-        xx=x$x[k1]
-        x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
-        hashBackgndData=x2
-        hashBackgndECDF=stats::ecdf(hashBackgndData)
-        x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
-        ecdfbg=1-hashBackgndECDF(x2)
-        hashBackgnd[,k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
+    methodVec=bgndThresDetMethod; if (bgndThresDetMethod=="automatic") {methodVec=c("default modes","two modes")}
+    methodVec=bgndThresDetMethod; if (bgndThresDetMethod=="automatic") {methodVec=c("default modes")}
+    for (methodThis in methodVec) {
+        #annHashBackgnd=matrix(nrow=6,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd","thres","thresRnd2","mode","adjust"),snacsObj$annHash$hashNames))
+        annHashBackgnd=matrix(nrow=4,ncol=nrow(snacsObj$annHash),dimnames=list(c("thres","thresRnd2","mode","adjust"),snacsObj$annHash$hashNames))
+        for (k in 1:ncol(hashMat)) {
+            if (methodThis=="manual") {
+                annHashBackgnd[c("thres","thresRnd2"),k]=c(bgndQuantileThreshold,bgndQuantileThresRnd2)
+            } else {
+                if (methodThis=="default modes") {
+                    x=stats::density(hashMat[,k],bw="SJ",adjust=1,na.rm=T)
+                    k1=which.max(x$y)
+                    if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
+                    annHashBackgnd[c("mode","adjust"),k]=c(x$x[k1],1)
+                } else if (methodThis=="two modes") {
+                    #bwMethod="SJ"
+                    bwMethod="nrd0"
+                    annHashBackgnd[c("mode","adjust"),k]=getHashModeInfo(mm=hashMat[,k],bw=bwMethod)
+                    x=stats::density(hashMat[,k],bw=bwMethod,adjust=annHashBackgnd["adjust",k],na.rm=T)
+                }
+
+                xx=annHashBackgnd["mode",k]
+                x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
+                hashBackgndData=x2
+                hashBackgndECDF=stats::ecdf(hashBackgndData)
+                x2=hashMat[which(hashMat[,k]<xx),k]-xx; x2=c(x2,-x2); x2=x2+xx
+                ecdfbg=1-hashBackgndECDF(x2)
+                #annHashBackgnd[c("mean","sd","thres","thresRnd2"),k]=c(mean(x2),stats::sd(x2),stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
+                annHashBackgnd[c("thres","thresRnd2"),k]=c(stats::quantile(x2,probs=c(backgndThreshold,backgndThresRnd2)))
+            }
+                        
+            snacsCallThis=rep("",nrow(snacsObj$annCell))
+            j=1:length(snacsCallThis)
+            for (sampleId in snacsObj$annHash$hashNames) {
+                jj=which(hashMat[,sampleId]>annHashBackgnd["thres",sampleId])
+                if (length(jj)!=0) snacsCallThis[jj]=paste0(snacsCallThis[jj],"_",sampleId)
+            }
+            snacsCallThis=sub("^_", "",snacsCallThis)
+            
+            if (all(snacsObj$annHash$hashNames%in%snacsCallThis)) break
+        }
     }
-    
+
+    k=which(!snacsObj$annHash$hashNames%in%snacsCallThis)
+    if (length(k)!=0) {warning(paste0('Cells cannot be assigned hash(s) ',paste0(snacsObj$annHash$hashNames[k],collapse=', '),'. Try bgndThresDetMethod="manual" in function getBestSNPs'))}
+
     snacsCallThis=rep("",nrow(snacsObj$annCell))
-    hashMatThis=hashMat
     j=1:length(snacsCallThis)
     for (sampleId in snacsObj$annHash$hashNames) {
-        if (is.na(backgndThreshold)) {
-            jj=which(hashMatThis[,sampleId]>=hashThreshold)
+        if (!is.na(hashThreshold)) {
+            jj=which(hashMat[,sampleId]>=hashThreshold)
         } else {
-            jj=which(hashMatThis[,sampleId]>hashBackgnd["thres",sampleId])
+            jj=which(hashMat[,sampleId]>annHashBackgnd["thres",sampleId])
         }
         if (length(jj)!=0) snacsCallThis[jj]=paste0(snacsCallThis[jj],"_",sampleId)
     }
     snacsCallThis=sub("^_", "",snacsCallThis)
     
+    snacsObj$annHashBackgnd=annHashBackgnd
     snacsObj$annCell$hashClust=snacsCallThis
 
     invisible(snacsObj)
 }
+
 
 ####################################################################
 ####################################################################
@@ -635,7 +694,12 @@ clusterSampleWithAntibodyData=function(snacsObj,backgndThreshold=0.95,cellPropor
 #' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
 #' @export
 generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {
+    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; outputFormat=""
+    
     outputFormat=outputFormat[1]
+
+    bwMethod="SJ"
+    bwMethod="nrd0"
 
     ## -----------------------------------
     if (outputFormat=="") {
@@ -654,7 +718,7 @@ generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProporti
     ## --------------------------------------
     ## --------------------------------------
 
-    hashBackgnd=matrix(nrow=2,ncol=nrow(snacsObj$annHash),dimnames=list(c("mean","sd"),snacsObj$annHash$hashNames))
+    annHashBackgnd=snacsObj$annHashBackgnd
     ylimHist=rep(NA,ncol(hashMat))
     for (k in 1:ncol(hashMat)) {
         y=graphics::hist(hashMat[,k],breaks=diff(range(hashMat[,k]))/.1,plot=F)
@@ -668,12 +732,11 @@ generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProporti
         )
         if (outputFormat!="") graphics::par(mfcol=c(3,1))
         
-        x=stats::density(hashMat[,k],bw="SJ",na.rm=T)
+        xx=annHashBackgnd["mode",k]
+
+        x=stats::density(hashMat[,k],bw=bwMethod,adjust=annHashBackgnd["adjust",k],na.rm=T)
         xlim=range(x$x); ylim=range(x$y); ylim=NULL; ylim=c(0,1)
         xlim=max(abs(range(x$x))); xlim=c(-xlim,xlim)
-        k1=which.max(x$y)
-        if (stats::quantile(hashMat[,k],probs=cellProportionBelowBackgndMode)<x$x[k1]) k1=which.max(x$y[1:stats::quantile(1:(k1-1),probs=cellProportionForModeDetection)])
-        xx=x$x[k1]
         x2=x$x[which(x$x<xx)]-xx; x2=c(x2,-x2); x2=x2+xx
         hashBGSymData=x2
         hashBackgndECDF=stats::ecdf(hashBGSymData)
@@ -682,15 +745,106 @@ generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProporti
         ecdfbg=1-hashBackgndECDF(hashBGData)
         vertLine=c(stats::median(x2),stats::quantile(x2,probs=backgndThreshold)); vertLineLab=c("med",backgndThreshold)
         graphics::plot(x,xlim=xlim,ylim=ylim,main=paste0(snacsObj$exptName,": ",colnames(hashMat)[k]),xlab="Hash",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis)
-        graphics::lines(stats::density(x2,bw="SJ"),col="red"); graphics::abline(v=vertLine,col="green")
-        graphics::plot(stats::density(x2,bw="SJ"),xlim=xlim,ylim=ylim,main="",xlab="Hash background",col="red",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis); graphics::abline(v=vertLine,col="green")
+        graphics::lines(stats::density(x2,bw=bwMethod,adjust=annHashBackgnd["adjust",k],na.rm=T),col="red"); graphics::abline(v=vertLine,col="green")
+        graphics::plot(stats::density(x2,bw=bwMethod,adjust=annHashBackgnd["adjust",k],na.rm=T),xlim=xlim,ylim=ylim,main="",xlab="Hash background",col="red",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis); graphics::abline(v=vertLine,col="green")
         graphics::axis(side=3,at=vertLine,labels=vertLineLab,cex.axis=plotInfo$cexAxis,las=3,col="green")
-        hashBackgnd[,k]=c(mean(x2),stats::sd(x2))
+        #annHashBackgnd[c("mean","sd"),k]=c(mean(x2),stats::sd(x2))
         x=hashMat[,k]
         graphics::hist(x,freq=T,breaks=diff(range(x))/.1,xlim=xlim,ylim=ylimHist,main=paste0(snacsObj$exptName,": ",colnames(hashMat)[k]),xlab="Hash",ylab="Count",cex.main=plotInfo$cexMain,cex.lab=plotInfo$cexLab,cex.axis=plotInfo$cexAxis)
 
         if (outputFormat!="") grDevices::dev.off()
     }
+}
+
+####################################################################
+####################################################################
+#' Get mode of density function
+#'
+#' Get two mode density function of hash antibody data for background detection.
+#'
+#' @param x .
+#' @param bw .
+#' @param adjust .
+#' @param signifi .
+#' @param from .
+#' @param to .
+#' @return A vector of modes
+#' @export
+getModes <- function(x,bw,adjust,signifi,from,to) {
+    #x=mm; bw="nrd0"; adjust=adjust; signifi=2; from=min(mm)-offsetMM; to=max(mm)+offsetMM
+    
+    den <- stats::density(x, kernel=c("gaussian"),bw=bw,adjust=adjust,from=from,to=to)
+    den.s <- stats::smooth.spline(den$x, den$y, all.knots=TRUE, spar=0.1)
+    s.1 <- stats::predict(den.s, den.s$x, deriv=1)
+    s.0 <- stats::predict(den.s, den.s$x, deriv=0)
+    den.sign <- sign(s.1$y)
+    a<-c(1,1+which(diff(den.sign)!=0))
+    b<-rle(den.sign)$values
+    df<-data.frame(a,b)
+    df = df[which(df$b %in% -1),]
+    modes<-s.1$x[df$a]
+    dens<-s.0$y[df$a]
+    df2<-data.frame(modes=modes,density=dens)
+    df2$sig<-signif(df2$density,signifi)
+    df2<-df2[with(df2, order(-sig)), ]
+    
+    df2[order(df2$modes),]
+}
+
+####################################################################
+####################################################################
+#' Get mode information of density function
+#'
+#' Get mode information of two mode density function of hash antibody data for background detection.
+#'
+#' @param mm .
+#' @param bw .
+#' @return Mode and adjustment values
+#' @export
+getHashModeInfo=function(mm,bw="nrd0") {
+    adjust=adjustThis=adjustPrev=1; offset=0.25
+    adjustMax=diff(range(mm))/2
+    offsetMM=0.001*diff(range(mm))
+
+    dirn=""
+    while (T) {
+        modeInfo<-getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
+
+        if (nrow(modeInfo)==2) {
+            break
+        } else if (nrow(modeInfo)>2) {
+            adjustThis=adjustThis+offset
+            if (adjustThis==1 | adjustThis>adjustMax | dirn=="dn") {
+                if (dirn=="dn") cat("dirn is down\n")
+                cat("Getting more than two modes\n")
+                adjustThis=adjust=adjustPrev
+                modeInfo<-getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
+                break
+            }
+            dirn="up"
+        } else {
+            adjustThis=adjustThis-offset
+            if (adjustThis==1 | adjustThis<=0 | dirn=="up") {
+                if (dirn=="up") cat("dirn is up\n")
+                cat("Getting one mode\n")
+                adjustThis=adjust=adjustPrev
+                modeInfo<-getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
+                break
+            }
+            dirn="dn"
+        }
+        #adjustPrev=adjust
+        adjust=adjustThis
+    }
+    
+    modeInfo=modeInfo[order(modeInfo$density,decreasing=T),]
+    modeInfo=modeInfo[1:min(2,nrow(modeInfo)),]
+    modeInfo=modeInfo[order(modeInfo$mode),]
+    
+    out=c(modeInfo$modes[1],adjust)
+    names(out)=c("mode","adjust")
+    
+    out
 }
 
 ###########################################################

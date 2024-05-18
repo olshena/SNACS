@@ -7,10 +7,14 @@
 getBestSNPs(
   snacsObj,
   numSNP = 3,
+  bgndThresDetMethod = c("automatic", "manual", "default modes", "two modes"),
   backgndThreshold = 0.95,
   cellProportionAboveBackgnd = 0.5,
   cellProportionBelowBackgndMode = 0.6,
   cellProportionForModeDetection = 0.75,
+  hashThreshold = NA,
+  bgndQuantileThreshold = NA,
+  bgndQuantileThresRnd2 = NA,
   outputFormat = c("", "pdf", "png")
 )
 }
@@ -19,6 +23,8 @@ getBestSNPs(
 
 \item{numSNP}{Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3}
 
+\item{bgndThresDetMethod}{Character. Method for detecting threshold of background antibody distribution. Default is "automatic"}
+
 \item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
 
 \item{cellProportionAboveBackgnd}{Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1}
@@ -26,6 +32,12 @@ getBestSNPs(
 \item{cellProportionBelowBackgndMode}{Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
 
 \item{cellProportionForModeDetection}{Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
+
+\item{hashThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA}
+
+\item{bgndQuantileThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"}
+
+\item{bgndQuantileThresRnd2}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"}
 
 \item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
 }

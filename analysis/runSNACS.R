@@ -81,7 +81,7 @@ for (fId in 1:length(fileList)) {
     cat("\n\n----------------- \n")
     print(snacsObj)
     
-    snacsObj <- SNACS::getBestSNPs(snacsObj,backgndThreshold=NA,outputFormat=outputFormat)
+    snacsObj <- SNACS::getBestSNPs(snacsObj,hashThreshold=0.5,outputFormat=outputFormat)
     print(snacsObj)
     save(snacsObj,file=paste0(dirData,"snacsObj_getBestSNPs_",snacsObj$exptName,".RData"))
 }

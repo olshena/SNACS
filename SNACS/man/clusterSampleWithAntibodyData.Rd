@@ -6,14 +6,19 @@
 \usage{
 clusterSampleWithAntibodyData(
   snacsObj,
+  bgndThresDetMethod = c("automatic", "manual", "default modes", "two modes"),
   backgndThreshold = 0.95,
   cellProportionBelowBackgndMode = 0.6,
   cellProportionForModeDetection = 0.75,
-  hashThreshold = 0.5
+  hashThreshold = NA,
+  bgndQuantileThreshold = NA,
+  bgndQuantileThresRnd2 = NA
 )
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
+
+\item{bgndThresDetMethod}{Character. Method for detecting threshold of background antibody distribution. Default is "automatic"}
 
 \item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
 
@@ -21,7 +26,11 @@ clusterSampleWithAntibodyData(
 
 \item{cellProportionForModeDetection}{Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
 
-\item{hashThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. Default is 0.5. Used if backgndThreshold = NA}
+\item{hashThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA}
+
+\item{bgndQuantileThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"}
+
+\item{bgndQuantileThresRnd2}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"}
 }
 \description{
 Assign sample IDs to cells based on hash antibody data

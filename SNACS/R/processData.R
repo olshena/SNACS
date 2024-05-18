@@ -23,7 +23,7 @@ SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NUL
     if ("id"%in%names(annSNP)) warning("Replacing column id in annSNP with generated SNP IDs")
     if ("id"%in%names(annCell)) warning("Replacing column id in annCell with generated cell IDs")
     
-    hashNames=rownames(hashes)
+    hashNames=rownames(hashes)=make.names(rownames(hashes),unique=T,allow_=T)
     if (is.null(hashColors)) hashColors=grDevices::rainbow(n=length(hashNames))
     if (length(hashColors)<length(hashNames)) stop("Number of hash colors should be the same as the number of hashes")
     #if ("cyan2"%in%hashColors) stop("Cyan is reserved for multiplets. Please choose a different hash color")

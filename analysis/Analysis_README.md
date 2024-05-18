@@ -78,8 +78,7 @@ Output files are saved in "../output" folder
 The **getBestSNPs function** groups single cells into preliminary groups bashed in hash antibody data, and selects the best SNPs that separate the single cells into these groups. In Experiment 5, this step identified 6 distinguishing SNPs, which are stored in the annSNP dataframe in the SNACslist object.
 
 ```{r}
-outputFormat <- "pdf"
-snacsObj <- getBestSNPs(snacsObj,outputFormat=outputFormat)
+snacsObj <- getBestSNPs(snacsObj,hashThreshold=0.5,outputFormat="pdf")
 ```
 
 The **generateAntibodyDensityPlot function** generates plots of the hash antibody distrubtion. The actual antibody expression is plotted in black. To generate the expected bimodal hash antibody distribution, we fit a Gaussian distribution to the left-most actual distribution (red line) and reflect the data to the left of the mode about the mode. 
