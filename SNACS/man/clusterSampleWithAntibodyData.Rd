@@ -19,7 +19,7 @@ clusterSampleWithAntibodyData(
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{minSampleSize}{Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a waring if below this number. Default is 100}
+\item{minSampleSize}{Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100}
 
 \item{bgndThresDetMethod}{Character. Method for detecting threshold of background antibody distribution. Default is "automatic"}
 

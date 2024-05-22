@@ -6,7 +6,7 @@
 #'
 #' @param snacsObj SNACSList object
 #' @param numSNP Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3
-#' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a waring if below this number. Default is 100
+#' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100
 #' @param bgndThresDetMethod Character. Method for detecting threshold of background antibody distribution. Default is "automatic"
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
 #' @param cellProportionAboveBackgnd Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
@@ -292,6 +292,7 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
 #' The above SNACS calls are refined by detecting narrow regions of multiplets. The cells, ordered as in the clusters above, are segmented by applying circular binary segmentation (CBS) on the distance to the centroid of the SNACS call groups. A segment is assigned the ID of each hash which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThresRnd2", of the hash background. A segment with multiple hashes above their corresponding hash background is considered a multiplet. Only narrow segments, specified by "maxClustSizeRnd2", are considered. The result is stored in the column "snacsRnd2" in the "annCell" table of the SNACS object
 #'
 #' @param snacsObj SNACSList object
+#' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
 #' @param cellProportionAboveBackgnd Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
@@ -307,9 +308,8 @@ clusterCellsWithSNPdata=function(snacsObj,clustMethod=c("hclust","skmean"),outpu
 #' @param cbsAlpha Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of SNACS calls. Default is 0.1
 #' @return A SNACSList object
 #' @export
-makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),makeSnacsCallRnd2=TRUE,maxClustSizeRnd2=100,backgndThresRnd2=0.75,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
-    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionAboveBackgnd=0.5; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf; clustCompareMethod=c("t","hotelling"); makeSnacsCallRnd2=TRUE; maxClustSizeRnd2=100; backgndThresRnd2=0.75; dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"); cbsAlpha=0.1
-    
+makeSnacsCall=function(snacsObj,minSampleSize=100,backgndThreshold=0.95,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),makeSnacsCallRnd2=TRUE,maxClustSizeRnd2=100,backgndThresRnd2=0.75,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1) {
+    #snacsObj=snacsObj; minSampleSize=100; backgndThreshold=0.95; cellProportionAboveBackgnd=0.5; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf; clustCompareMethod=c("t","hotelling"); makeSnacsCallRnd2=TRUE; maxClustSizeRnd2=100; backgndThresRnd2=0.75; dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"); cbsAlpha=0.1
     
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
@@ -562,6 +562,17 @@ makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd
     } else {snacsCall=snacsRnd1}
     print(table(snacsCall,cluster=clustInfo[match(snacsObj$hclustObj_bestSNPs$label,clustInfo$id),"clustId"],exclude=NULL,dnn=list("SNACS calls",paste0("Cell clusters with best SNPs"))))
     rm(snacsCall)
+    
+    for (snacsCallRnd in c("snacsRnd1","snacsRnd2")) {
+        snacsCallThis=snacsObj$annCell[,snacsCallRnd]
+        k=which(!snacsObj$annHash$hashNames%in%snacsCallThis)
+        if (length(k)!=0) {warning(paste0('Cells cannot be assigned hash(s) ',paste0(snacsObj$annHash$hashNames[k],collapse=', '),'in ',snacsCallRnd,'. Try running function getBestSNPs with bgndThresDetMethod as "two modes" or "manual"'))
+        } else {
+            x=table(snacsCallThis[which(snacsCallThis%in%snacsObj$annHash$hashNames)])
+            k=which(x<minSampleSize)
+            if (length(k)!=0) {warning(paste0('Not enough cells can be assigned hash(s) ',paste0(names(x)[k],collapse=', '),'in ',snacsCallRnd,'. Try running function getBestSNPs with bgndThresDetMethod as "two modes" or "manual" or by lowering parameter minSampleSize'))}
+        }
+    }
 
     invisible(snacsObj)
 }
@@ -573,7 +584,7 @@ makeSnacsCall=function(snacsObj,backgndThreshold=0.95,cellProportionAboveBackgnd
 #' Assign sample IDs to cells based on hash antibody data
 #'
 #' @param snacsObj SNACSList object
-#' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a waring if below this number. Default is 100
+#' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100
 #' @param bgndThresDetMethod Character. Method for detecting threshold of background antibody distribution. Default is "automatic"
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
@@ -645,11 +656,11 @@ clusterSampleWithAntibodyData=function(snacsObj,minSampleSize=100,bgndThresDetMe
     }
     snacsCallThis=sub("^_", "",snacsCallThis)
     k=which(!snacsObj$annHash$hashNames%in%snacsCallThis)
-    if (length(k)!=0) {warning(paste0('Cells cannot be assigned hash(s) ',paste0(snacsObj$annHash$hashNames[k],collapse=', '),'. Try running function getBestSNPs with bgndThresDetMethod="manual"'))
+    if (length(k)!=0) {warning(paste0('Cells cannot be assigned hash(s) ',paste0(snacsObj$annHash$hashNames[k],collapse=', '),'. Try running function getBestSNPs with bgndThresDetMethod as "two modes" or "manual"'))
     } else {
         x=table(snacsCallThis[which(snacsCallThis%in%snacsObj$annHash$hashNames)])
         k=which(x<minSampleSize)
-        if (length(k)!=0) {warning(paste0('Not enoght cell can be assigned hash(s) ',paste0(names(x)[k],collapse=', '),'. Try running function getBestSNPs with bgndThresDetMethod="manual" or lowering parameter minSampleSize'))}
+        if (length(k)!=0) {warning(paste0('Not enough cells can be assigned hash(s) ',paste0(names(x)[k],collapse=', '),'. Try running function getBestSNPs with bgndThresDetMethod as "two modes" or "manual" or by lowering parameter minSampleSize'))}
     }
 
     snacsCallThis=rep("",nrow(snacsObj$annCell))

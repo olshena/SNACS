@@ -6,6 +6,7 @@
 \usage{
 makeSnacsCall(
   snacsObj,
+  minSampleSize = 100,
   backgndThreshold = 0.95,
   cellProportionAboveBackgnd = 0.5,
   cellProportionBelowBackgndMode = 0.6,
@@ -24,6 +25,8 @@ makeSnacsCall(
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
+
+\item{minSampleSize}{Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100}
 
 \item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
 
