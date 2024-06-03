@@ -84,8 +84,10 @@ numSNPvec=1:5
 thresGenoCall=0.005
 
 dirTrueHashCall=paste0("../output/accuracy/trueHashCall/")
-dirOutput=paste0("../output/accuracy/")
-dirOutput2=paste0("../output/accuracy/heatmapAllSNP/")
+#dirOutput=paste0("../output/accuracy/")
+dirOutput=paste0("../output/accuracy/truthCall/")
+dirOutput2=paste0(dirOutput,"heatmapAllSNP/")
+if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
 if (!file.exists(dirOutput2)) dir.create(file.path(dirOutput2))
 for (numSNP in numSNPvec) {
     for (snacsExpt in c("SNACS5","SNACS6","SNACS7")) {

@@ -4,10 +4,12 @@
 \alias{runSNACSplusDoubletD}
 \title{Add doubletD calls to SNACS hash calls}
 \usage{
-runSNACSplusDoubletD(snacsObj)
+runSNACSplusDoubletD(snacsObj, verbose = FALSE)
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
+
+\item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }
 \value{
 A SNACSList object

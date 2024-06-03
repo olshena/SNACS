@@ -15,7 +15,7 @@ setExptName <- function(snacsObj,exptName) {
 
 ## ------------------------------
 ## Get experiment infomation from SNACS metadata Excel file
-getExptInfoData <- function(fileName="SNACS_Metadata.csv") {
+getExptInfoData <- function(fileName="../data/SNACS_Metadata.csv") {
 phen = read.csv(fileName)
 phen=as.data.frame(phen,stringsAsFactors=F)
 names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
@@ -493,6 +493,8 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,exp
         load(paste0(dirData,fName))
 
         hashCallMismatch=2; accuracy=T; exptNameSingleSuffix=exptNameSingleSuffix; dirData="../data/accuracy/"; dirTrueHashCall="../output/accuracy/trueHashCall/"; dirOutput="../output/accuracy/"; writeOutput="ambiguousGeno"
+        
+        hashCallMismatch=2; accuracy=F; exptNameSingleSuffix="_unfilt"; dirData="../data/accuracy/"; dirTrueHashCall="../output/accuracy/trueHashCall/"; dirOutput="../output/accuracy/"; writeOutput="ambiguousGeno"
     }
     
     if (!file.exists(dirData)) dir.create(file.path(dirData))
@@ -512,7 +514,7 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,exp
     k=apply(x,1,function(x) {sum(x!=0)==1})
     phen=phen[which(phen$run%in%rownames(x)[k]),]
     snacsObj$annHash$exptName=phen$run[match(snacsObj$annHash$patient,phen$patient)]
-    
+
     if ("snacsPlusDoubletD"%in%names(snacsObj$annCell)) {
         names(snacsObj$annCell)[match(c("snacsPlusDoubletD"),names(snacsObj$annCell))]=c("snacsRnd3")
     }
@@ -565,7 +567,8 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,exp
     snacsObj=snacsObj0
 
     exptNameMult=snacsObj$exptName
-    exptNameSingleVec=paste0(unique(phen$run[phen$patient%in%snacsObj$annHash$patient]),exptNameSingleSuffix)
+    #exptNameSingleVec=paste0(unique(phen$run[phen$patient%in%snacsObj$annHash$patient]),exptNameSingleSuffix)
+    exptNameSingleVec=paste0(snacsObj$annHash$exptName,exptNameSingleSuffix)
     exptNameVec=c(exptNameMult,exptNameSingleVec)
 
     snpName=snacsObj$annSNP$desc

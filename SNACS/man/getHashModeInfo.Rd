@@ -4,12 +4,14 @@
 \alias{getHashModeInfo}
 \title{Get mode information of density function}
 \usage{
-getHashModeInfo(mm, bw = "nrd0")
+getHashModeInfo(mm, bw = "nrd0", verbose = FALSE)
 }
 \arguments{
 \item{mm}{.}
 
 \item{bw}{.}
+
+\item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }
 \value{
 Mode and adjustment values

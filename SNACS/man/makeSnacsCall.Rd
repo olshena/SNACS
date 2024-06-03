@@ -7,20 +7,16 @@
 makeSnacsCall(
   snacsObj,
   minSampleSize = 100,
-  backgndThreshold = 0.95,
   cellProportionAboveBackgnd = 0.5,
-  cellProportionBelowBackgndMode = 0.6,
-  cellProportionForModeDetection = 0.75,
   minClustSize = 2,
   clustComparePValue = 10^-5,
   maxClustSampleSize = Inf,
   clustCompareMethod = c("t", "hotelling"),
-  makeSnacsCallRnd2 = TRUE,
   maxClustSizeRnd2 = 100,
-  backgndThresRnd2 = 0.75,
   dataTypeRnd2 = c("euclidean", "sum of squares", "log2 euclidean",
     "log2 sum of squares"),
-  cbsAlpha = 0.1
+  cbsAlpha = 0.1,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -28,13 +24,7 @@ makeSnacsCall(
 
 \item{minSampleSize}{Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100}
 
-\item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
-
 \item{cellProportionAboveBackgnd}{Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1}
-
-\item{cellProportionBelowBackgndMode}{Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
-
-\item{cellProportionForModeDetection}{Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
 
 \item{minClustSize}{Numeric. Minimum number of cells required to be in a cluster. Default is 2}
 
@@ -44,15 +34,13 @@ makeSnacsCall(
 
 \item{clustCompareMethod}{Character. Test used to compare clusters. Default is t-test}
 
-\item{makeSnacsCallRnd2}{Logical. Make second round of SNACS calls to detect narrow multiplet regions. Default is TRUE}
-
 \item{maxClustSizeRnd2}{Integer. Maximum number of cells required to be in a cluster for making second round of SNACS calls. Default is 100}
-
-\item{backgndThresRnd2}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of SNACS calls. Default is 0.75. Range is 0-1}
 
 \item{dataTypeRnd2}{Character. Type of data to be used for splitting the cells when making second round of SNACS calls. Default is euclidean distance of the cells to the cluster means from first round of SNACS calls}
 
 \item{cbsAlpha}{Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of SNACS calls. Default is 0.1}
+
+\item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }
 \value{
 A SNACSList object

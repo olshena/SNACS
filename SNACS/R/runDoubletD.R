@@ -343,9 +343,10 @@ runDoubletD <- function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
 #' First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign as a doublet those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls. The result is stored in the column "snacsPlusDoubletD" in the "annCell" table of the SNACS object.
 #'
 #' @param snacsObj SNACSList object
+#' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-runSNACSplusDoubletD <- function(snacsObj) {
+runSNACSplusDoubletD <- function(snacsObj,verbose=FALSE) {
     if (is.na(match("snacsRnd1",names(snacsObj$annCell)))) stop("Run makeHashCall() before calling runSNACSplusDoubletD()\n")
     
     snacsObj=runDoubletD(snacsObj)
@@ -357,8 +358,7 @@ runSNACSplusDoubletD <- function(snacsObj) {
     }
     snacsObj$annCell$snacsPlusDoubletD[which(snacsObj$annCell$snacsPlusDoubletD%in%snacsObj$annHash$hashNames & snacsObj$annCell$doubletD=="Doublet")]="Doublet"
 
-    cat('"doubletD" and "snacsPlusDoubletD" columns added to "annCell" table in SNACS object\n',sep="")
-    cat("\n")
+    if (verbose) cat('"doubletD" and "snacsPlusDoubletD" columns added to "annCell" table in SNACS object\n\n',sep="")
     
     invisible(snacsObj)
 }

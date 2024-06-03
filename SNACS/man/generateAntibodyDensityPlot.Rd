@@ -15,7 +15,7 @@ generateAntibodyDensityPlot(
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell. Default is 0.95. Range is 0-1}
+\item{backgndThreshold}{Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making first round of SNACS calls. Default is 0.95. Range is 0-1}
 
 \item{cellProportionBelowBackgndMode}{Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1}
 

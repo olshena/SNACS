@@ -6,16 +6,16 @@
 \usage{
 clusterCellsWithSNPdata(
   snacsObj,
-  clustMethod = c("hclust", "skmean"),
-  outputFormat = c("", "pdf", "png")
+  outputFormat = c("none", "", "pdf", "png"),
+  verbose = FALSE
 )
 }
 \arguments{
 \item{snacsObj}{SNACSList object}
 
-\item{clustMethod}{Character. Clustering method. Options are "hclust" and "skmean". Default is "hclust"}
+\item{outputFormat}{Character. Output file type. "" outputs to the standard output. Default is "none" which does not plot anything}
 
-\item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
+\item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }
 \value{
 A SNACSList object

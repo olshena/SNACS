@@ -79,6 +79,8 @@ SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NUL
     ## Generate output folder if it doesn't exist
     dirOutput="../output/"
     if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
+    #dirOutput="../output/hashDensityPlot/"; if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
+    #dirOutput="../output/heatmap/"; if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
 
     if (!all(c("id","desc")%in%names(annSNP))) {
         stop("annSNP has to be a data frame with at least two columns - id and desc")
@@ -106,7 +108,7 @@ SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NUL
 #' @export
 print.SNACSList=function(x,...) {
     cat('An object of class "SNACSList"\n',sep="")
-    cat("Experiment name: ",x$exptName, "\n",sep="")
+    cat("Experiment name: ",x$exptName,"\n",sep="")
     cat("No. of SNPs: ",nrow(x$mut),"\n",sep="")
     cat("No. of cells: ",ncol(x$mut),"\n",sep="")
     cat("Hashes: ",paste(x$annHash$hashNames,collapse=", "),"\n",sep="")
@@ -192,6 +194,49 @@ filterData=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCel
     if (!is.null(snacsObj$depthTotal)) {snacsObj[["depthTotal"]]=depthTotalThis; snacsObj[["depthAlt"]]=depthAltThis}
 
     invisible(snacsObj)
+}
+
+####################################################################
+####################################################################
+#' Read a HDF5 file and transform the data into a format that can be processed by SNACSList function. The datasets expected to be in the file are.
+#' CELL_BARCODES - vector of cell barcodes
+#' VARIANTS - vector of variant names
+#' GT - genotype data matrix
+#' ABS/clr - hash antibody data matrix
+#' AB_DESCRIPTIONS - hash names
+#' DP - total depth matrix
+#' AD - alternate depth matrix
+#' See h5read function in rhdf5 package and SNACSList function in SNACS packge for details
+#'
+#' @param file Character. Name of HDF5 file which has the data
+#' @return A list having objects that are needed to create a SNACS object
+#' @export
+h5readForSNACS=function(file) {
+    barcodes=rhdf5::h5read(file,"/CELL_BARCODES")
+    variants=rhdf5::h5read(file,"/VARIANTS")
+    genotypes=rhdf5::h5read(file,"/GT")
+    hashes=rhdf5::h5read(file,"/ABS/clr")
+    hashnames=rhdf5::h5read(file,"/AB_DESCRIPTIONS")
+    totaldepth=rhdf5::h5read(file,"/DP")
+    altdepth=rhdf5::h5read(file,"/AD")
+
+    mutMat=matrix(as.numeric(genotypes),nrow=nrow(genotypes),ncol=ncol(genotypes))
+    rownames(mutMat)=variants
+    colnames(mutMat)=barcodes
+    mutMat[mutMat==3]=NA
+
+    colnames(hashes)=barcodes
+    rownames(hashes)=hashnames
+
+    depthTotal=matrix(as.numeric(totaldepth),nrow=nrow(totaldepth),ncol=ncol(totaldepth))
+    rownames(depthTotal)=variants
+    colnames(depthTotal)=barcodes
+
+    depthAlt=matrix(as.numeric(altdepth),nrow=nrow(altdepth),ncol=ncol(altdepth))
+    rownames(depthAlt)=variants
+    colnames(depthAlt)=barcodes
+
+    invisible(list(mut=mutMat,hashes=hashes,depthTotal=depthTotal,depthAlt=depthAlt))
 }
 
 ####################################################################

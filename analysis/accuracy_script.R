@@ -68,11 +68,13 @@ for (exptNameSuffix in paste0("_unfilt")) {
 library(SNACS)
 source("../analysis/functions.R")
 
-dirTrueHashCall="../output/accuracy/"
+#dirTrueHashCall="../output/accuracy/"
+dirTrueHashCall="../output/accuracy/trueHashCall/"
 
-#for (snacsExpt in c("SNACS5","SNACS6","SNACS7")) {
-#for (snacsExpt in c("SNACS5")) {
-for (snacsExpt in c("SNACS6","SNACS7")) {
+dirOutput=paste0("../output/accuracy/truthCall/")
+dirOutput2=paste0(dirOutput,"heatmapAllSNP/")
+
+for (snacsExpt in c("SNACS5","SNACS6","SNACS7")) {
 dirData <- "../data/"
     fName <- paste0("snacsObj_withDoubletD_",snacsExpt,"_unfilt.RData")
     cat("\n\n----------------- Input file: ",fName,"\n",sep="")

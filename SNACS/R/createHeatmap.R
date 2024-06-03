@@ -12,7 +12,7 @@
 
 #' @return A SNACSList object
 #' @export
-createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row_dend=F,h_title=NULL,outputFileName="heatmap",outputFormat=c("","pdf","png"),write2Table=F) {
+createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row_dend=F,h_title=NULL,outputFileName="heatmap",outputFormat=c("","pdf","png","none"),write2Table=F) {
     
     ################################################
     ## Parameters
@@ -25,7 +25,7 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     ## Parameters - optional
 
     ## Whether to generate the heatmap in a subfolder
-    subsetCellFlag=""
+    #subsetCellFlag=""
 
     ## Whether to generate sample & heatmap color legends
     showLegend=T
@@ -53,9 +53,11 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     ################################################
     ## Folder where heatmap will be generated
     
-    if (outputFormat!="") {
+    if (!outputFormat%in%c("","none")) {
+    #if (outputFormat!="") {
         subDir="../output/"; if (!file.exists(subDir)) dir.create(file.path(subDir))
         subDir="../output/heatmap/"; if (!file.exists(subDir)) dir.create(file.path(subDir))
+        #subDir="../output/heatmap/"
     }
 
     ################################################
@@ -119,10 +121,11 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     }
 
     ################################################
-    if (outputFormat!="") {
-        subDir="../output/heatmap/"; if (!file.exists(subDir)) dir.create(file.path(subDir))
-        if (subsetCellFlag!="") {subDir=paste0(subDir,subsetCellFlag,"/"); if (!file.exists(subDir)) dir.create(file.path(subDir))}
-        dirH=subDir
+    if (!outputFormat%in%c("","none")) {
+    #if (outputFormat!="") {
+        #subDir="../output/heatmap/"; if (!file.exists(subDir)) dir.create(file.path(subDir))
+        #dirH=subDir
+        dirH="../output/heatmap/"
     }
 
     switch(outputFormat,
@@ -131,10 +134,17 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     )
     
     ## Generate heatmap
-    clustObj=heatmap4::generate_heatmap(x=snacsObj$mut,distfun=distfun,methodR=linkMethod,methodC=linkMethod,col_anno=T,row_anno=hasRowAnno,col_info=snacsObj$annCell,row_info=snacsObj$annSNP,col_dend=col_dend,row_dend=row_dend,col_lab=F,row_lab=F,zlm=limHM,ncc=ncc,ncr=ncr,heatmap_color=heatmap_color,col_anno_var=cell_anno_var,col_anno_name=cell_anno_name,col_var_info=col_var_info,row_anno_var=snp_anno_var,row_anno_name=snp_anno_name,row_var_info=row_var_info,densColor=NULL,h_title=h_title,plot_info=plotInfo,input_legend=showLegend)
+    if (outputFormat=="none") {
+        #clustObj=heatmap4::getCluster(dat=snacsObj$mut,distMethod=distfun,linkMethod=linkMethod,absolute=F)
+        distMat=distfun(t(snacsObj$mut))
+        clustObj=list(colClust=stats::hclust(distMat,method=linkMethod))
+    } else {
+        clustObj=heatmap4::generate_heatmap(x=snacsObj$mut,distfun=distfun,methodR=linkMethod,methodC=linkMethod,col_anno=T,row_anno=hasRowAnno,col_info=snacsObj$annCell,row_info=snacsObj$annSNP,col_dend=col_dend,row_dend=row_dend,col_lab=F,row_lab=F,zlm=limHM,ncc=ncc,ncr=ncr,heatmap_color=heatmap_color,col_anno_var=cell_anno_var,col_anno_name=cell_anno_name,col_var_info=col_var_info,row_anno_var=snp_anno_var,row_anno_name=snp_anno_name,row_var_info=row_var_info,densColor=NULL,h_title=h_title,plot_info=plotInfo,input_legend=showLegend)
+    }
     
-    if (outputFormat!="") grDevices::dev.off()
-    
+    if (!outputFormat%in%c("","none")) grDevices::dev.off()
+    #if (outputFormat!="") grDevices::dev.off()
+
     if (write2Table) {
         ## Write the cell & SNP annotation tables ordered as in heatmap
         tbl=heatmap4::cutCluster(clustObj$rowClust,ann=snacsObj$annSNP,nClust=ncr,rev=T)

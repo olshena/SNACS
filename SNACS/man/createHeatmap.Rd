@@ -12,7 +12,7 @@ createHeatmap(
   row_dend = F,
   h_title = NULL,
   outputFileName = "heatmap",
-  outputFormat = c("", "pdf", "png"),
+  outputFormat = c("", "pdf", "png", "none"),
   write2Table = F
 )
 }

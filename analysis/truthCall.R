@@ -143,7 +143,7 @@ makeHashPairScatterPlot=function(exptName,exptNameSuffix,dirData=paste0(dirOutpu
 ####################################################################
 
 makeTruthCall=function(exptNameSuffix,thresGenoCall,dirData="../output/accuracy/annCell/",dirOutput="../output/accuracy/trueHashCall/") {
-    #exptNameSuffix=exptNameSuffix; thresGenoCall=thresGenoCall; dirOutput="accuracy/"
+    #exptNameSuffix=exptNameSuffix; thresGenoCall=thresGenoCall; dirData="../output/accuracy/annCell/"; dirOutput="../output/accuracy/trueHashCall/"
     
     #truthCallType="manual" ## NOT used. For hand curated singlet truth calls
     truthCallType="automatic"
