@@ -54,5 +54,5 @@ getBestSNPs(
 A SNACSList object
 }
 \description{
-Group cells into constituent samples based on hash antibody data. Select the best SNPs that separate the cell groups using the mutation data.
+Group cells into constituent samples based on hash antibody data. Select the SNPs that best separate the groups.
 }

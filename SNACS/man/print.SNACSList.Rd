@@ -12,5 +12,5 @@
 \item{...}{ignored}
 }
 \description{
-Print SNACSList object.
+Provide information about the SNACSList object.
 }

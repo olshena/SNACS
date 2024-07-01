@@ -1,4 +1,4 @@
-#' Generate heatmap of mutation data
+#' Generate annotated heatmap of mutation data
 #'
 #' @param snacsObj SNACSList object
 #' @param cell_anno_var Character vector. Cell variables for which color bars are to be added to the heatmap. Default is NULL
@@ -24,11 +24,7 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     ################################################
     ## Parameters - optional
 
-    ## Whether to generate the heatmap in a subfolder
-    #subsetCellFlag=""
-
     ## Whether to generate sample & heatmap color legends
-    showLegend=T
     showLegend=F
 
     ################################################
@@ -57,15 +53,12 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     #if (outputFormat!="") {
         subDir="../output/"; if (!file.exists(subDir)) dir.create(file.path(subDir))
         subDir="../output/heatmap/"; if (!file.exists(subDir)) dir.create(file.path(subDir))
-        #subDir="../output/heatmap/"
     }
 
     ################################################
     ## "generate_heatmap()"  parameters
     
     if (col_dend) ncc=nrow(snacsObj$annHash) else ncc=NA; if (!row_dend) ncr=NA else ncr=NA
-    #heatmap_color=c("orangered1","royalblue3","white")
-    #heatmap_color=c("navy","gray85","orangered1")
     heatmap_color=c("navy","gray85","navy")
     limHM=c(0,1)
     plotInfo=list(margins=c(5,.2),cexRow=0.2,cexCol=0.2,cexRowSide=1,cexColSide=.7,colorCatCol=c("skyblue", "blue", "yellow", "purple", "black", "red", "orange", "green", "cyan", "darkgreen","grey","brown","pink","salmon","palegreen"))
@@ -96,7 +89,6 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     multNames=c(snacsObj$annHash$hashNames,multNames)
     if ("doubletD"%in%names(snacsObj$annCell)) {
         col_var_info[["doubletD"]]=list(color=c("navy","white"),level=c("Singlet","Doublet"))
-        #k=which(col_var_info[["doubletD"]]$level%in%snacsObj$annCell$hashCall_HTOdemux)
     }
 
     row_var_info=list(SnpEff_Annotation_Impact=list(color=c("brown","yellow","orange","red","white"),
@@ -122,9 +114,6 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
 
     ################################################
     if (!outputFormat%in%c("","none")) {
-    #if (outputFormat!="") {
-        #subDir="../output/heatmap/"; if (!file.exists(subDir)) dir.create(file.path(subDir))
-        #dirH=subDir
         dirH="../output/heatmap/"
     }
 
@@ -135,7 +124,6 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     
     ## Generate heatmap
     if (outputFormat=="none") {
-        #clustObj=heatmap4::getCluster(dat=snacsObj$mut,distMethod=distfun,linkMethod=linkMethod,absolute=F)
         distMat=distfun(t(snacsObj$mut))
         clustObj=list(colClust=stats::hclust(distMat,method=linkMethod))
     } else {
@@ -143,7 +131,6 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     }
     
     if (!outputFormat%in%c("","none")) grDevices::dev.off()
-    #if (outputFormat!="") grDevices::dev.off()
 
     if (write2Table) {
         ## Write the cell & SNP annotation tables ordered as in heatmap

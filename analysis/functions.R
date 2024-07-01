@@ -15,7 +15,7 @@ setExptName <- function(snacsObj,exptName) {
 
 ## ------------------------------
 ## Get experiment infomation from SNACS metadata Excel file
-getExptInfoData <- function(fileName="../data/SNACS_Metadata.csv") {
+getExptInfoData_old <- function(fileName="../data/SNACS_Metadata.csv") {
 phen = read.csv(fileName)
 phen=as.data.frame(phen,stringsAsFactors=F)
 names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
@@ -28,19 +28,159 @@ phen$hashId=as.integer(as.factor(phen$hash))
 }
 
 ## ------------------------------
+## Get experiment infomation from SNACS metadata Excel file
+getExptInfoData <- function(fileName="SNACS2_Metadata.xlsx",dirName="../data/",modified=F) {
+    #fileName="SNACS2_Metadata.xlsx"; dirName=dirInput
+    
+    phen1=phen2=NULL
+    for (fId in 1:length(fileName)) {
+        fNameThis=fileName[fId]
+        if (fNameThis=="SNACS_Metadata.csv") {
+            phen = read.csv(paste0(dirName,fNameThis))
+            phen=as.data.frame(phen,stringsAsFactors=F)
+            names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
+                    c("run","patient","hash")
+            phen$hash=sub("-",".",phen$hash)
+            phen$patId=as.integer(as.factor(phen$patient))
+            phen$hashId=as.integer(as.factor(phen$hash))
+        } else {
+            library(readxl)
+            phen=readxl::read_xlsx(paste0(dirName,fNameThis),sheet=1)
+            phen=as.data.frame(phen,stringsAsFactors=F)
+            names(phen)[match(c("Run","Patient","Hash","Total Number Cells","Missing Data (Unfiltered)"),names(phen))]=
+                c("run","patient","hash","numCell","missGenoUnfilt")
+            phen=phen[!is.na(phen$hash),c("run","patient","hash","numCell","missGenoUnfilt")]
+            p1=which(!is.na(phen$run)); p2=c(p1[2:length(p1)]-1,nrow(phen))
+            for (p in 1:length(p1)) {
+                for (k in c("run","numCell","missGenoUnfilt")) phen[p1[p]:p2[p],k]=phen[p1[p],k]
+                j=which(is.na(phen$sample[p1[p]:p2[p]]))
+                if (length(j)!=0) for (k in c("patient")) phen[p1[p]:p2[p],k]=phen[p1[p],k]
+
+            }
+            for (k in "numCell") phen[,k]=as.integer(phen[,k])
+            for (k in "missGenoUnfilt") phen[,k]=as.numeric(phen[,k])
+            phen$hash=sub("-",".",sub("?","",phen$hash,fixed=T))
+            
+            phen$hash[which(phen$run=="SNACS9")]="TS.5"
+            tbl=phen[which(phen$run%in%c("SNACS9","SNACS11")),]
+            tbl$patient[which(tbl$run=="SNACS9")]="Patient F"
+            tbl$hash[which(tbl$run=="SNACS9")]="TS.6"
+            tbl$patient[which(tbl$run=="SNACS11")]="Patient H"
+            tbl$hash[which(tbl$run=="SNACS11")]="TS.8"
+            phen=rbind(phen,tbl)
+
+            phen$hash[phen$hash=="None"]=NA
+            phen$patId=as.integer(as.factor(phen$patient))
+            phen$hashId=as.integer(as.factor(phen$hash))
+            #phen=phen[!is.na(phen$numCell),]
+            
+            if (modified) {
+                j=which(phen$run%in%paste0("SNACS",9:12))
+                tmp=phen[j,]
+                tmp$run[which(tmp$run=="SNACS9")]="SNACS105"
+                tmp$run[which(tmp$run=="SNACS10")]="SNACS106"
+                tmp$run[which(tmp$run=="SNACS11")]="SNACS127"
+                tmp$run[which(tmp$run=="SNACS12")]="SNACS128"
+                tmp$patient[which(tmp$run=="SNACS105")]="Patient E"
+                tmp$patient[which(tmp$run=="SNACS106")]="Patient F"
+                tmp$patient[which(tmp$run=="SNACS127")]="Patient G"
+                tmp$patient[which(tmp$run=="SNACS128")]="Patient H"
+                phen[j,]=tmp
+                phen=phen[order(phen$run),]
+                phen$run[which(duplicated(phen$run))]=""
+            }
+        }
+        phen=phen[,c("run","patient","hash","patId","hashId")]
+
+        if (fNameThis=="SNACS_Metadata.csv") {phen1=phen} else {phen2=phen}
+    }
+    phen=rbind(phen1,phen2)
+
+    invisible(phen)
+}
+
+## ------------------------------
+## Set experiment name
+setSingleExptInfo=function(snacsObj,procLev="init") {
+    exptNameMult=strsplit(snacsObj$exptName,"_")[[1]][1]
+    exptNameSingle=rep("",nrow(snacsObj$annHash))
+    switch(exptNameMult,
+        "SNACS5"={exptNameSingle=paste0("SNACS",1:2)},
+        "SNACS6"={exptNameSingle=paste0("SNACS",2:4)},
+        "SNACS7"={exptNameSingle=paste0("SNACS",1:4)},
+        "SNACS13"={exptNameSingle=paste0("SNACS",c(105,106,127,128))},
+        "SNACS14"={exptNameSingle=paste0("SNACS",c(105,106,127,128))},
+        "SNACS15"={exptNameSingle=paste0("SNACS",c(1:4,105,106,127,128))},
+        "SNACS16"={exptNameSingle=paste0("SNACS",c(1:4,105,106,127,128))}
+    )
+    patId=order(snacsObj$annHash$patient)
+    snacsObj$annHash$exptName=paste0(exptNameSingle[patId])
+    
+    processLevels=rep("init",nrow(snacsObj$annHash))
+    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="impAcc1415"
+    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="impAcc14to16"
+    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="impAccSD14to16"
+    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="s1snp14to16"
+    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="callSnp14to16_impSnp14to16"
+    processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]=procLev
+    snacsObj$annHash$processLevels=processLevels
+
+    invisible(snacsObj)
+}
+
+## ------------------------------
 ## Add hash calls from HTOdemux to SNACS object
 getHTOdemuxCall <- function(snacsObj,dirName="../data/SNACS_HTOdemux/") {
-    #fName=paste0(sub("_unfilt","",snacsObj$exptName),"_HTOdemux.csv")
-    fName=paste0(strsplit(snacsObj$exptName,"_")[[1]][1],"_HTOdemux.csv")
-    dat=read.table(paste0(dirName,fName),sep=",",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
-    names(dat)=c("id","hashCall")
-    for (k in 1:ncol(dat)) dat[,k]=gsub("\"","",dat[,k])
-    dat$hashCall=gsub("-",".",dat$hashCall)
-    snacsObj$annCell$desc=gsub("-",".",snacsObj$annCell$desc)
-    j=match(snacsObj$annCell$desc,dat$id); j1=which(!is.na(j)); j2=j[j1]
-    snacsObj$annCell$HTOdemux="Missing"
-    snacsObj$annCell$HTOdemux[j1]=dat$hashCall[j2]
-    #snacsObj$annCell$HTOdemux[which(snacsObj$annCell$HTOdemux=="")]=NA
+    exptName=strsplit(snacsObj$exptName,"_")[[1]][1]
+    if (exptName%in%paste0("SNACS",1:7)) {
+        #fName=paste0(sub("_unfilt","",snacsObj$exptName),"_HTOdemux.csv")
+        fName=paste0(exptName,"_HTOdemux.csv")
+        dat=read.table(paste0(dirName,fName),sep=",",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
+        names(dat)=c("id","hashCall")
+        for (k in 1:ncol(dat)) dat[,k]=gsub("\"","",dat[,k])
+        dat$hashCall=gsub("-",".",dat$hashCall)
+        snacsObj$annCell$desc=gsub("-",".",snacsObj$annCell$desc)
+        j=match(snacsObj$annCell$desc,dat$id); j1=which(!is.na(j)); j2=j[j1]
+        snacsObj$annCell$HTOdemux="Missing"
+        snacsObj$annCell$HTOdemux[j1]=dat$hashCall[j2]
+        #snacsObj$annCell$HTOdemux[which(snacsObj$annCell$HTOdemux=="")]=NA
+    } else {
+        snacsObj$annCell$HTOdemux=""
+    }
+    
+    invisible(snacsObj)
+}
+
+## ------------------------------
+## get SNP description
+
+getSNPdesc.int=function(desc) {
+    #length(strsplit(desc,":")[[1]])
+    y=strsplit(desc,":")[[1]]
+    if (length(y)==4) descOut=paste0(y[2:4],collapse=":") else descOut=desc
+    #length(strsplit(descOut,":")[[1]])
+    descOut
+}
+
+getSNPdesc=function(descIn) {
+    descVec=sapply(descIn,getSNPdesc.int,USE.NAMES=F)
+    
+    invisible(descVec)
+}
+
+## ------------------------------
+## Set experiment name
+subsetSNACSobject=function(snacsObj,snpId=NULL,cellId=NULL) {
+    if (is.null(snpId)) snpId=1:nrow(snacsObj$annSNP)
+    if (is.null(cellId)) cellId=1:nrow(snacsObj$annCell)
+    snacsObj$mut=snacsObj$mut[snpId,cellId]
+    snacsObj$hashes=snacsObj$hashes[,cellId]
+    snacsObj$annSNP=snacsObj$annSNP[snpId,]
+    snacsObj$annCell=snacsObj$annCell[cellId,]
+    if (!is.null(snacsObj$depthTotal)) {
+        snacsObj$depthTotal=snacsObj$depthTotal[snpId,cellId]
+        snacsObj$depthAlt=snacsObj$depthAlt[snpId,cellId]
+    }
     
     invisible(snacsObj)
 }
@@ -328,10 +468,12 @@ createAnnotatedHeatmap <- function(snacsObj,dirOutput="../output/heatmap/") {
         annCell=cbind(snacsRnd1=snacsObj$annCell$snacsRnd1,clustSplitRnd1=snacsObj$annCell$clustSplitRnd1,as.data.frame(t(snacsObj$hashes[nrow(snacsObj$hashes):1,])),stringsAsFactors=F)
     }
     for (k in which(names(annCell)%in%c("truth"))) annCell[is.na(annCell[,k]),k]=""
+    densColor=NULL
+    densColor=5
     #annCell=cbind(hash=snacsObj$annCell$snacsRnd1,clustSplitRnd1=snacsObj$annCell$clustSplitRnd1,clustSplitRnd2=snacsObj$annCell$clustSplitRnd2,as.data.frame(t(snacsObj$hashes)),stringsAsFactors=F)
     #png(paste0("heatmap_",snacsObj$exptName,".png"))
     pdf(paste0(dirOutput,"heatmap_",snacsObj$exptName,".pdf"))
-    x2=heatmap4::generate_heatmap(x=snacsObj$mut,distfun=distfun,col_clust=snacsObj$hclustObj_bestSNPs,col_dend=T,row_dend=row_dend,col_info=annCell,col_anno=T,zlm=zlm,heatmap_color=heatmap_color,col_var_info=col_var_info,h_title=snacsObj$exptName,row_lab=T,row_lab_vtr=nameRow,input_legend=input_legend)
+    x2=heatmap4::generate_heatmap(x=snacsObj$mut,distfun=distfun,col_clust=snacsObj$hclustObj_bestSNPs,col_dend=T,row_dend=row_dend,col_info=annCell,col_anno=T,zlm=zlm,heatmap_color=heatmap_color,col_var_info=col_var_info,h_title=snacsObj$exptName,row_lab=T,row_lab_vtr=nameRow,densColor=densColor,input_legend=input_legend)
     dev.off()
 }
 
@@ -339,7 +481,7 @@ createAnnotatedHeatmap <- function(snacsObj,dirOutput="../output/heatmap/") {
 ####################################################################
 
 getColVarInfo=function(snacsObj,snacsRndId) {
-    patInfo=cbind(c(gsub("Patient ","pat",snacsObj$annHash$patient),"Multiplet","Ambiguous",""),c(snacsObj$annHash$patColors,"grey50","white","white"))
+    patInfo=cbind(c(gsub("Patient ","pat",snacsObj$annHash$patient),"Multiplet","Ambiguous",""),c(snacsObj$annHash$patColors,"grey50","white","black"))
 
     col_var_info=list()
     hashInfo=snacsObj$annHash
@@ -468,38 +610,18 @@ getTruthCall=function(snacsObj,fName,dirTrueHashCall="../output/accuracy/trueHas
 ## dirData Folder where R objects related to accuracy are to be saved
 ## dirOutput Folder where output plots and tables are to be saved
 
-#getAnnoForAccuracy <- function(snacsObj,snacsRnd=c(1,2),hashCallMismatch=c(3,2,1),accuracy=F,exptNameSingleSuffix="",dirData="../data/accuracy/",dirTrueHashCall="../output/accuracy/trueHashCall/",dirOutput="../output/accuracy/",writeOutput="ambiguousGeno") {
-getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,exptNameSingleSuffix="",dirData="../data/accuracy/",dirTrueHashCall="../output/accuracy/trueHashCall/",dirOutput="../output/accuracy/",writeOutput="ambiguousGeno") {
+getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,procLev="init",exptNameSingleSuffix="",dirData="../data/accuracy/",dirTrueHashCall="../output/accuracy/trueHashCall/",dirOutput="../output/accuracy/",writeOutput="ambiguousGeno") {
     #snacsRnd=snacsRnd[1]
     hashCallMismatch=hashCallMismatch[1]
     
     if (F) {
-        dirData <- "../data/"
-        
-        exptNameSingleSuffix="_unfilt"
-        fName <- paste0("snacsObj_SNACS5_unfilt.RData")
-        fName <- paste0("snacsObj_withDoubletD_SNACS6_unfilt.RData")
-        fName <- paste0("snacsObj_withDoubletD_SNACS5_unfilt.RData")
-        cat("\n\n----------------- Input file: ",fName,"\n",sep="")
-        load(paste0(dirData,fName))
-        hashCallMismatch=2; accuracy=F; exptNameSingleSuffix=exptNameSingleSuffix; dirData="../data/accuracy/"; dirTrueHashCall="../output/accuracy/"; dirOutput="../output/accuracy/"; writeOutput="ambiguousGeno"
-
-        dirData <- "../data/"
-        numSNP=3
-        exptNameSingleSuffix <- paste0("_hashFiltNumSNP",numSNP)
-        fName <- paste0("snacsObj_SNACS5",exptNameSingleSuffix,".RData")
-        fName <- paste0("snacsObj_withDoubletD_SNACS5",exptNameSingleSuffix,".RData")
-        cat("\n\n----------------- Input file: ",fName,"\n",sep="")
-        load(paste0(dirData,fName))
-
-        hashCallMismatch=2; accuracy=T; exptNameSingleSuffix=exptNameSingleSuffix; dirData="../data/accuracy/"; dirTrueHashCall="../output/accuracy/trueHashCall/"; dirOutput="../output/accuracy/"; writeOutput="ambiguousGeno"
-        
+        load("/Users/royr/UCSF/singleCell/snacsExpt_1to8sample/data/snacsObj_SNACS14_unfilt.RData")
         hashCallMismatch=2; accuracy=F; exptNameSingleSuffix="_unfilt"; dirData="../data/accuracy/"; dirTrueHashCall="../output/accuracy/trueHashCall/"; dirOutput="../output/accuracy/"; writeOutput="ambiguousGeno"
     }
     
     if (!file.exists(dirData)) dir.create(file.path(dirData))
-    if (!file.exists(dirTrueHashCall)) dir.create(file.path(dirTrueHashCall))
     if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
+    if (!file.exists(dirTrueHashCall)) dir.create(file.path(dirTrueHashCall))
     if (!file.exists(paste0(dirOutput,"heatmapCommonSNP/"))) dir.create(file.path(paste0(dirOutput,"heatmapCommonSNP/")))
     if (!file.exists(paste0(dirOutput,"annCell/"))) dir.create(file.path(paste0(dirOutput,"annCell/")))
     if ("ambiguousGeno"%in%writeOutput) {
@@ -509,11 +631,17 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,exp
 
     dirDataMain="../data/"
 
-    phen=getExptInfoData()
-    x=table(phen$run,phen$patient)
-    k=apply(x,1,function(x) {sum(x!=0)==1})
-    phen=phen[which(phen$run%in%rownames(x)[k]),]
-    snacsObj$annHash$exptName=phen$run[match(snacsObj$annHash$patient,phen$patient)]
+    if (F) {
+        phen=getExptInfoData()
+        x=table(phen$run,phen$patient)
+        k=apply(x,1,function(x) {sum(x!=0)==1})
+        phen=phen[which(phen$run%in%rownames(x)[k]),]
+        snacsObj$annHash$exptName=phen$run[match(snacsObj$annHash$patient,phen$patient)]
+    } else {
+        #phen=getExptInfoData(fileName=c("SNACS_Metadata.csv","SNACS2_Metadata.xlsx"),dirName="../data/")
+        snacsObj=setSingleExptInfo(snacsObj,procLev=procLev)
+    }
+    snacsObj$annSNP$desc=getSNPdesc(snacsObj$annSNP$desc)
 
     if ("snacsPlusDoubletD"%in%names(snacsObj$annCell)) {
         names(snacsObj$annCell)[match(c("snacsPlusDoubletD"),names(snacsObj$annCell))]=c("snacsRnd3")
@@ -573,13 +701,17 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,exp
 
     snpName=snacsObj$annSNP$desc
     for (eIdS in 1:length(exptNameSingleVec)) {
-        load(file=paste0(dirDataMain,"snacsObj_init_",exptNameSingleVec[eIdS],".RData"))
+        if (snacsObj0$annHash$processLevels[eIdS]=="init") {
+            load(file=paste0(dirDataMain,"snacsObj_init_",exptNameSingleVec[eIdS],".RData"))
+        } else {
+            load(file=paste0(dirDataMain,"snacsObj_",snacsObj0$annHash$processLevels[eIdS],"_",exptNameSingleVec[eIdS],".RData"))
+        }
+        snacsObj$annSNP$desc=getSNPdesc(snacsObj$annSNP$desc)
         snpName=snpName[which(snpName%in%snacsObj$annSNP$desc)]
     }
     if (length(snpName)==0) {
         stop("Accuracy: No commom SNPs among the experiments.")
     }
-    
     
     ## ------------------------------
     ## Ambiguous genotypes
@@ -756,19 +888,24 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,exp
             col_var_info=getColVarInfo(snacsObj,snacsRndId=snacsRndId)
         } else {
             ## Create SNACS object for single-patient experient with common SNPs
-            snpName2=snpName
-            load(file=paste0(dirDataMain,"snacsObj_imp_",exptNameVec[eId],".RData"))
-            snpName2=snacsObj$annSNP$desc
+            if (snacsObj0$annHash$processLevels[eIdS]=="init") {
+                snpName2=snpName
+                load(file=paste0(dirDataMain,"snacsObj_imp_",exptNameVec[eId],".RData"))
+                snpName2=snacsObj$annSNP$desc
 
-            load(file=paste0(dirDataMain,"snacsObj_init_",exptNameVec[eId],".RData"))
-            i=which(snacsObj$annSNP$desc%in%c(snpName2,snacsObj0$annSNP$desc))
-            snacsObj$mut=snacsObj$mut[i,]
-            snacsObj$annSNP=snacsObj$annSNP[i,]
-            #table(snpName%in%snacsObj$annSNP$desc)
-            
-            #snacsObj=imputeMissingMutations(snacsObj,proportionMissingPerCell=1,proportionMissingPerSNP=1,proportionMutatedPerCell=c(0,1),proportionMutatedPerSNP=c(0,1))
-            snacsObj=filterData(snacsObj,proportionMissingPerCell=1,proportionMissingPerSNP=1,proportionMutatedPerCell=c(0,1),proportionMutatedPerSNP=c(0,1))
-            snacsObj=imputeMissingMutations(snacsObj)
+                load(file=paste0(dirDataMain,"snacsObj_init_",exptNameVec[eId],".RData"))
+                i=which(snacsObj$annSNP$desc%in%c(snpName2,snacsObj0$annSNP$desc))
+                snacsObj$mut=snacsObj$mut[i,]
+                snacsObj$annSNP=snacsObj$annSNP[i,]
+                #table(snpName%in%snacsObj$annSNP$desc)
+                
+                #snacsObj=imputeMissingMutations(snacsObj,proportionMissingPerCell=1,proportionMissingPerSNP=1,proportionMutatedPerCell=c(0,1),proportionMutatedPerSNP=c(0,1))
+                snacsObj=filterData(snacsObj,proportionMissingPerCell=1,proportionMissingPerSNP=1,proportionMutatedPerCell=c(0,1),proportionMutatedPerSNP=c(0,1))
+                snacsObj=imputeMissingMutations(snacsObj)
+            } else {
+                load(file=paste0(dirDataMain,"snacsObj_",snacsObj0$annHash$processLevels[eIdS],"_",exptNameVec[eId],".RData"))
+            }
+            snacsObj$annSNP$desc=getSNPdesc(snacsObj$annSNP$desc)
 
             i=match(snpName,snacsObj$annSNP$desc)
             snacsObj$mut=snacsObj$mut[i,]

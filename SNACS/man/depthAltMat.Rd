@@ -14,6 +14,6 @@ A matrix with 22 rows and 739 columns:
 depthAltMat
 }
 \description{
-The alternate depth data should be a numeric matrix with SNPs in the rows and cells in the columns. The total depth value should be a continuous numeric measure.
+The alternate depth data should be a numeric matrix with SNPs in the rows and cells in the columns. The alternate depth value should be a continuous numeric measure.
 }
 \keyword{datasets}

@@ -2,7 +2,7 @@
 ####################################################################
 #' Create a SNACSList object.
 #'
-#' SNACS stores data in a simple list-based data object called a SNACSList.
+#' Create a simple list-based data object called SNACSList that can be used by the methods in the SNACS package to make SNACS calls.
 #'
 #' @param mut Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns cells
 #' @param hashes Numeric matrix. Matrix having hash values as numeric data. Rows depict hashes and columns cells
@@ -27,7 +27,7 @@ SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NUL
     if (is.null(hashColors)) hashColors=grDevices::rainbow(n=length(hashNames))
     if (length(hashColors)<length(hashNames)) stop("Number of hash colors should be the same as the number of hashes")
     #if ("cyan2"%in%hashColors) stop("Cyan is reserved for multiplets. Please choose a different hash color")
-    cat("Shades of gray are reserved for multiplets\n")
+    cat("Do not use shades of gray as hash colors. Those are reserved for multiplets\n")
     if (is.null(annCell)) {
         annCell=data.frame(id=paste0("cell",1:ncol(mut)))
     } else {
@@ -102,6 +102,8 @@ SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NUL
 ####################################################################
 #' Print SNACSList object.
 #'
+#' Provide information about the SNACSList object.
+#'
 #' @method print SNACSList
 #' @param x SNACSList object
 #' @param ... ignored
@@ -119,6 +121,8 @@ print.SNACSList=function(x,...) {
 ####################################################################
 ####################################################################
 #' Filter mutation data in SNACSList object.
+#'
+#' Filter out SNPs and cells which have many missing values in the mutation data. SNPs which are nearly all mutated or all unmutated are excluded.
 #'
 #' @param snacsObj SNACSList object
 #' @param proportionMissingPerSNP Numeric. Only SNPs with lower than this proportion of missing values are considered. Default is 0.4. Range is 0-1
@@ -198,43 +202,64 @@ filterData=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCel
 
 ####################################################################
 ####################################################################
-#' Read a HDF5 file and transform the data into a format that can be processed by SNACSList function. The datasets expected to be in the file are.
-#' CELL_BARCODES - vector of cell barcodes
-#' VARIANTS - vector of variant names
-#' GT - genotype data matrix
-#' ABS/clr - hash antibody data matrix
-#' AB_DESCRIPTIONS - hash names
-#' DP - total depth matrix
-#' AD - alternate depth matrix
-#' See h5read function in rhdf5 package and SNACSList function in SNACS packge for details
+#' Read a HDF5 file and transform it for easy processing by SNACS
 #'
-#' @param file Character. Name of HDF5 file which has the data
-#' @return A list having objects that are needed to create a SNACS object
+#' Read a HDF5 file and transform the data into a format that can be processed by SNACSList function. The datasets expected to be in the file are <br>
+#' CELL_BARCODES - Character. Vector of cell barcodes <br>
+#' VARIANTS - Character. Vector of variant names <br>
+#' GT - Integer matrix. Matrix having genotype data where columns are cells and rows are SNPs <br>
+#' ABS/clr - Numeric matrix. Matrix having hash antibody data where columns are cell and rows are hashes <br>
+#' AB_DESCRIPTIONS - Character. Vector of hash names <br>
+#' DP - Numeric matrix. Matrix of total depth data where columns are cells and rows are SNPs <br>
+#' AD - Numeric matrix. Matrix of alternate depth data where columns are cells and rows are SNPs <br>
+#' See h5read function in rhdf5 package and SNACSList function in SNACS package for details
+#'
+#' @param file Character. Name of HDF5 file
+#' @return A list of objects containing:
+#' mut Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns cells <br>
+#' hashes Numeric matrix. Matrix having hash values as numeric data. Rows depict hashes and columns cells <br>
+#' depthTotal Numeric matrix. Matrix having total depth values as numeric data. Rows depict SNPs and columns cells <br>
+#' depthAlt Numeric matrix. Matrix having total alternate values as numeric data. Rows depict SNPs and columns cells <br>
+#' annCell Data frame. Table of cell annotation. Default is NULL <br>
+#' annSNP Data frame. Table of SNP annotation. Default is NULL <br>
 #' @export
 h5readForSNACS=function(file) {
+    attrib=rhdf5::h5ls(file,recursive=F,datasetinfo=F)
+    
     barcodes=rhdf5::h5read(file,"/CELL_BARCODES")
     variants=rhdf5::h5read(file,"/VARIANTS")
     genotypes=rhdf5::h5read(file,"/GT")
     hashes=rhdf5::h5read(file,"/ABS/clr")
-    hashnames=rhdf5::h5read(file,"/AB_DESCRIPTIONS")
-    totaldepth=rhdf5::h5read(file,"/DP")
-    altdepth=rhdf5::h5read(file,"/AD")
+    hashNames=rhdf5::h5read(file,"/AB_DESCRIPTIONS")
+    if (all(c("DP","AD")%in%attrib$name)) {
+        totaldepth=rhdf5::h5read(file,"/DP")
+        altdepth=rhdf5::h5read(file,"/AD")
+    } else {
+        totaldepth=altdepth=NULL
+    }
+
+    annCell=data.frame(id=paste0("cell",1:ncol(genotypes)),desc=barcodes)
+    annSNP=data.frame(id=paste0("snp",1:nrow(genotypes)),desc=variants)
+    hashNames=make.names(hashNames,unique=T,allow_=T)
 
     mutMat=matrix(as.numeric(genotypes),nrow=nrow(genotypes),ncol=ncol(genotypes))
-    rownames(mutMat)=variants
-    colnames(mutMat)=barcodes
+    rownames(mutMat)=annSNP$id
+    colnames(mutMat)=annCell$id
+    mutMat[mutMat==2]=1
     mutMat[mutMat==3]=NA
 
-    colnames(hashes)=barcodes
-    rownames(hashes)=hashnames
+    colnames(hashes)=annCell$id
+    rownames(hashes)=hashNames
 
-    depthTotal=matrix(as.numeric(totaldepth),nrow=nrow(totaldepth),ncol=ncol(totaldepth))
-    rownames(depthTotal)=variants
-    colnames(depthTotal)=barcodes
+    if (all(c("DP","AD")%in%attrib$name)) {
+        depthTotal=matrix(as.numeric(totaldepth),nrow=nrow(totaldepth),ncol=ncol(totaldepth))
+        rownames(depthTotal)=annSNP$id
+        colnames(depthTotal)=annCell$id
 
-    depthAlt=matrix(as.numeric(altdepth),nrow=nrow(altdepth),ncol=ncol(altdepth))
-    rownames(depthAlt)=variants
-    colnames(depthAlt)=barcodes
+        depthAlt=matrix(as.numeric(altdepth),nrow=nrow(altdepth),ncol=ncol(altdepth))
+        rownames(depthAlt)=annSNP$id
+        colnames(depthAlt)=annCell$id
+    }
 
     invisible(list(mut=mutMat,hashes=hashes,depthTotal=depthTotal,depthAlt=depthAlt))
 }
@@ -243,14 +268,14 @@ h5readForSNACS=function(file) {
 ####################################################################
 #' Impute missing mutations in SNACSList object.
 #'
+#' Missing values in the mutation data are imputed using K-nearest neighbors (KNN) method.
+#'
 #' @param snacsObj SNACSList object
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
 imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     timeStamp=Sys.time()
-
-    #if (is.na(match("filtered",snacsObj[["processLevels"]]))) stop("Run getBestSNPs() before imputing data\n")
 
     if (verbose) cat("\n\nImputing ",snacsObj$exptName," ...\n",sep="")
     dirData="../data/"

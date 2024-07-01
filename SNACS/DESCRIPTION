@@ -1,6 +1,6 @@
 Package: SNACS
 Title: Single Nucleotide Polymorphism (SNP) and Antibody-Based Cell Sorting (SNACS)
-Version: 1.0.4.9
+Version: 1.1
 Author: Ritu Roy <ritu.roy@ucsf.edu>, Adam Olshen <adam.olshen@ucsf.edu>
 Description: Tool for demultiplexing single-cell DNA sequencing data using DNA sequencing data and hash antibody data.
 Maintainer: Ritu Roy <ritu.roy@ucsf.edu>

@@ -30,5 +30,5 @@ filterData(
 A SNACSList object
 }
 \description{
-Filter mutation data in SNACSList object.
+Filter out SNPs and cells which have many missing values in the mutation data. SNPs which are nearly all mutated or all unmutated are excluded.
 }

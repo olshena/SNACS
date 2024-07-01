@@ -39,5 +39,5 @@ SNACSList(
 A SNACSList object
 }
 \description{
-SNACS stores data in a simple list-based data object called a SNACSList.
+Create a simple list-based data object called SNACSList that can be used by the methods in the SNACS package to make SNACS calls.
 }

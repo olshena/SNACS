@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeSNACScall.R
 \name{generateAntibodyDensityPlot}
 \alias{generateAntibodyDensityPlot}
-\title{Generate hash antibody background density plot}
+\title{Generate hash antibody background density plots}
 \usage{
 generateAntibodyDensityPlot(
   snacsObj,
@@ -24,5 +24,5 @@ generateAntibodyDensityPlot(
 \item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
 }
 \description{
-The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each subject. The top figure shows the distribution of a hash antibody. The middle figure shows the distribution of the background only. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The green lines mark the median and 95th percentile of the background distribution. The bottom figure is the histogram of the hash antibody data. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of that hash antibody. The background of the hash antibody is estimated by determining the background mode based on all cells and generating an empirical symmetric distribution around it.
+The density plots are helpful is understanding the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each sample. The top figure shows the distribution of a hash antibody. The background distribution, shown in red, is estimated by generating a symmetric distribution by reflecting the data to the left of the left mode about that mode. The green lines mark the median and 95th percentile of the background distribution. The middle figure shows just the estimated background distribution. The bottom figure is the histogram of the hash antibody data.
 }

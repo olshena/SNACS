@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeSNACScall.R
 \name{clusterCellsWithSNPdata}
 \alias{clusterCellsWithSNPdata}
-\title{Cluster cells based on the SNP data}
+\title{Cluster cells based on SNP data}
 \usage{
 clusterCellsWithSNPdata(
   snacsObj,
@@ -21,5 +21,5 @@ clusterCellsWithSNPdata(
 A SNACSList object
 }
 \description{
-Cluster cells, where the number of clusters is the number of constituent samples, using the mutation data with the selected SNPs. Generate heatmap of the mutation data.
+Cluster cells, where the number of clusters is the number of constituent samples, using the mutation data of select SNPs. Generate heatmap of the mutation data.
 }

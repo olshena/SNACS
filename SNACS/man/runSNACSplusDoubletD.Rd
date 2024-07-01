@@ -2,7 +2,7 @@
 % Please edit documentation in R/runDoubletD.R
 \name{runSNACSplusDoubletD}
 \alias{runSNACSplusDoubletD}
-\title{Add doubletD calls to SNACS hash calls}
+\title{Add doubletD calls to SNACS calls}
 \usage{
 runSNACSplusDoubletD(snacsObj, verbose = FALSE)
 }
@@ -15,5 +15,5 @@ runSNACSplusDoubletD(snacsObj, verbose = FALSE)
 A SNACSList object
 }
 \description{
-First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then assign as a doublet those cells called a doublet by doubletD but a singlet in the last round of SNACS hash calls. The result is stored in the column "snacsPlusDoubletD" in the "annCell" table of the SNACS object.
+First run doubletD, which assigns singlet or doublet designation to each cell based on total depth and alternate depth values. Then designate those cells as a doublet that are called so by doubletD but are called a singlet by SNACS Round 2. The result is stored in the column "snacsPlusDoubletD" in the "annCell" table of the SNACS object.
 }

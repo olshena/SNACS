@@ -15,16 +15,16 @@ knitr::opts_chunk$set(
 )
 ```
 ## Overview
-Single Nucleotide Polymorphism (SNP) and Antibody-based Cell Sorting (SNACS) is a tool for demultiplexing single-cell DNA sequencing data. It combines both SNP and barcoding based approaches for demultiplexing and multiplet identification based upon DAb-seq technology.
+Single Nucleotide Polymorphism (SNP) and Antibody-based Cell Sorting (SNACS) is a tool for demultiplexing and visualizing single-cell DNA sequencing data. It combines both SNP and barcoding based approaches for demultiplexing and multiplet identification, based on DAb-seq technology.
 
 ## Load SNACS package
-The first step is to load the SNACS package.
 ```{r setup}
 library(SNACS)
 ```
 
 ## Input data format
-SNACS requires a matrix containing the single cell SNP data from the multiplexed profiles of parent samples and a matrix containing the hash antibody data of each sample. The mutation data should be a numeric matrix with SNPs in the rows and cells in the columns. 1s represent mutations and 0s non-mutations. The antibody data should be a matrix with samples in the rows and cells in the columns. The hash antibody values should be continuous numeric measures. Optional cell and SNP level annotations can be provided as data frames.
+SNACS requires a matrix containing the single cell SNP data from the multiplexed profiles of parent samples and a matrix containing the hash antibody data of each sample. The mutation data should be a numeric matrix with SNPs in the rows and cells in the columns. 1s represent mutations and 0s non-mutations. The antibody data should be a matrix with samples in the rows and cells in the columns. The hash antibody values should be continuous numeric measures. To run doubletD method, matrices of total depth and alternate depth have to be included. Again, these should be numeric matrices with samples in the rows and cells in the columns. Optional cell and SNP level annotations can be provided as data frames.<br><br>
+See "h5readForSNACS" function for extracting data from HDF5 file.
 
 ## Example data
 An example data has been included with the package. It has mutation and antibody data from 3 parent samples with 739 cells and 22 SNPs. We will demonstrate the package with this data.
@@ -37,6 +37,7 @@ dim(mutMat)
 mutMat[1:4,1:4]
 
 ```
+
 Matrix "hashMat" has the hash antibody data.
 
 ```{r, echo = TRUE}
@@ -45,6 +46,7 @@ dim(hashMat)
 hashMat[,1:4]
 
 ```
+
 Matrix "depthTotalMat" has the total allele depth data. This information has to be provided if one wants to run the additional SNACS + doubletD analysis.
 
 ```{r, echo = TRUE}
@@ -53,6 +55,7 @@ dim(depthTotalMat)
 depthTotalMat[1:4,1:4]
 
 ```
+
 Matrix "depthAltMat" has the alternate allele depth data. This information is also needed if one wants to run SNACS + doubletD analysis.
 
 ```{r, echo = TRUE}
@@ -61,8 +64,9 @@ dim(depthAltMat)
 depthAltMat[1:4,1:4]
 
 ```
-## Create SNACSList object
-SNACS stores data in a simple list-based data object called a SNACSList. The SNACSList object can be made for the example data as follows.
+
+## Create a SNACSList object
+Create a SNACSList object. This object can be made for the example data as follows:
 ```{r, echo = TRUE}
 
 ## Parameters mut, hashes, exptName are mandatory while depthTotalMat, depthAltMat and hashColors are optional. depthTotalMat and depthAltMat are used for making doubletD calls
@@ -88,23 +92,23 @@ snacsObj$annCell[1:4,]
 ```
 
 ## Detection of additional multiplet cells via combination with doubletD
-The capability to call multiplets at the single-cell level by incorporating the previously-published doubletD algorithm is also available. In doubletD, matrices of total and alternate allele depth for each single-cell barcode are used to identify doublets based on increased allele frequency and/or drop-out via an expectation-maximization approach. For each single cell in a multi-sample experiment, the cell is considered a multiplet if it was called a multiplet by SNACS, as detailed above, or by doubletD. The output of this optional subsequent refinement step is designated “SNACS plus doubletD”. Of note, although the mathematics of the doubletD algorithm are identical to those previously published, the author-supplied code was translated from python to R for seamless incorporation into the SNACS software.
+The capability to call multiplets at the single-cell level by incorporating the previously-published doubletD algorithm is also available. In doubletD, matrices of total and alternate allele depth for each single-cell barcode are used to identify doublets based on increased allele frequency and/or drop-out via an expectation-maximization approach. For each single cell in a multi-sample experiment, the cell is considered a multiplet if it was called a multiplet by SNACS, as detailed above, or by doubletD. This designation is called “SNACS plus doubletD”. Of note, although the mathematics of the doubletD algorithm are identical to those previously published, the author-supplied code was translated from python to R for seamless incorporation into the SNACS software.
 
 ```{r, echo = TRUE}
 
-snacsObj=runSNACSplusDoubletD(snacsObj)
+snacsObj=runSNACSplusDoubletD(snacsObj=snacsObj)
 
 snacsObj$annCell[1:4,]
 
 ```
 
 ## Visualization with annotated heatmap of SNP data
-Heatmap of the SNP data with cell annotation can be generated. Here the heatmap of the best SNPs are annotated with color bars for the SNACS calls along with the clusters from the first round of clustering, and the hash antibody measures.
+The SNACS calls can be visualized with a heatmap of the SNP data. The heatmap is based on the select SNPs that best separate the cells into constituent parent samples. The cells are annotated with color bars for the SNACS calls, along with clusters from SNACS Round 1 and the hash antibody measures.
 The parameter "outputFormat" can be used to save the heatmap in "pdf" or "png" format. The output is then saved in "../output" folder.
 
 ```{r, fig.show = "hold", out.width = "100%", echo = TRUE}
 
-createHeatmap(snacsObj,
+createHeatmap(snacsObj=snacsObj,
    cell_anno_var=c("snacsPlusDoubletD","doubletD","snacsRnd2","snacsRnd1",snacsObj$annHash$hashNames,"clustBestSNPs_hclust"),
    cell_anno_name=c("snacs+DD","doubletD","snacsRnd2","snacsRnd1",snacsObj$annHash$hashNames,"cluster"),
    outputFormat="")

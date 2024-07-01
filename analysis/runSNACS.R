@@ -4,9 +4,9 @@
 ####################################################################
 ####################################################################
 library(SNACS)
-library(heatmap4)
-library(readxl)
-source("../analysis/functions.R")
+#library(heatmap4)
+#library(readxl)
+#source("../analysis/functions.R")
 
 ####################################################################
 ####################################################################
@@ -17,42 +17,50 @@ packageVersion("SNACS")
 ####################################################################
 
 ## ------------------------------
-## Create SNACSList objects
+## Extract raw data from hdf5 file. Then create SNACSList objects
+
 hashColors <- c("indianred2","green3","dodgerblue3","magenta3")
-dirInput <- "../data/data_sequenced/"
-dirOutput <- "../data/"
-file_path <- "SNACS5.genotypes.hdf5" 
+dirDataRaw <- "../data/data_sequenced/"
+dirData <- "../data/"
 
-
-## Raw data can be imported directly from the h5 file 
-barcodes <- h5read(file_path, "/CELL_BARCODES")
-variants <- h5read(file_path, "/VARIANTS")
-genotypes <- h5read(file_path, "/GT")
-hashes <- h5read(file_path, "/ABS/clr")
-hashnames <- h5read(file_path, "/AB_DESCRIPTIONS")
-totaldepth <- h5read(file_path, "/DP")
-altdepth <- h5read(file_path, "/AD")
-
-mutMat <- matrix(as.numeric(genotypes), nrow = nrow(genotypes), ncol = ncol(genotypes))
-rownames(mutMat) <- variants
-colnames(mutMat) <- barcodes
-mutMat[mutMat == 2] <- 1
-mutMat[mutMat == 3] <- NA
-
-colnames(hashes) <- barcodes
-rownames(hashes) <- hashnames
-hashMat <- hashes
-
-depthTotal <- matrix(as.numeric(totaldepth), nrow = nrow(totaldepth), ncol = ncol(totaldepth))
-rownames(depthTotal) <- variants
-colnames(depthTotal) <- barcodes
-
-depthAlt <- matrix(as.numeric(altdepth), nrow = nrow(altdepth), ncol = ncol(altdepth))
-rownames(depthAlt) <- variants
-colnames(depthAlt) <- barcodes
-
-snacsObj <- SNACSList(mut=mutMat,hashes=hashMat,exptName=exptName,,hashColors=hashColors,
-                      depthTotal=totaldepth,depthAlt=altdepth)
+for (exptName in paste0("SNACS",1:7)) {
+    cat("\n\n------------- ",exptName,"\n")
+    switch(exptName,
+        "SNACS1"={
+            fileName="GSM8066757.hdf5"
+            hashNames=c("TS.1","TS.2")
+        },
+        "SNACS2"={
+            fileName="GSM8066758.hdf5"
+            hashNames=c("TS.2","TS.3")
+        },
+        "SNACS3"={
+            fileName="GSM8066759.hdf5"
+            hashNames=c("TS.3","TS.4")
+        },
+        "SNACS4"={
+            fileName="GSM8066760.hdf5"
+            hashNames=c("TS.1","TS.4")
+        },
+        "SNACS5"={
+            fileName="GSM8066761.hdf5"
+            hashNames=c("TS.1","TS.2")
+        },
+        "SNACS6"={
+            fileName="GSM8066762.hdf5"
+            hashNames=c("TS.2","TS.3","TS.4")
+        },
+        "SNACS7"={
+            fileName="GSM8066763.hdf5"
+            hashNames=c("TS.1","TS.2","TS.3","TS.4")
+        }
+    )
+    h5toList=h5readForSNACS(file=paste0(dirDataRaw,fileName))
+    
+    snacsObj=SNACSList(mut=h5toList$mut,hashes=h5toList$hashes[1:2,],exptName="SNACS5",hashColors=hashColors,
+                          depthTotal=h5toList$depthTotal,depthAlt=h5toList$depthAlt)
+    save(snacsObj,file=paste0(dirData,"snacsObj_init_",exptName,".RData"))
+}
 
 ## ------------------------------
 ## Run SNACS
@@ -70,7 +78,7 @@ for (fId in 1:length(fileList)) {
 }
 
 ## ------------------------------
-## Generate heatmap with annotation
+## Generate heatmap with cell annotation
 
 outputFormat <- "pdf"
 dirData <- "../data/"
@@ -99,8 +107,9 @@ for (fId in 1:length(fileList)) {
 }
 
 ## ------------------------------
-## Generate heatmap with annotation
+## Generate heatmap with SNACS + doubletD annotation
 
+outputFormat <- "pdf"
 dirData <- "../data/"
 fileList <- paste0("snacsObj_withDoubletD_SNACS",c(5:7),"_unfilt.RData")
 for (fId in 1:length(fileList)) {
@@ -108,9 +117,7 @@ for (fId in 1:length(fileList)) {
     cat("\n\n----------------- \n")
     print(snacsObj)
     
-    snacsObj <- getHTOdemuxCall(snacsObj=snacsObj)
-    
-    createAnnotatedHeatmap(snacsObj)
+    clustObj=SNACS::createHeatmap(snacsObj,cell_anno_var=c("snacsPlusDoubletD","doubletD","snacsRnd2","snacsRnd1","clustBestSNPs_hclust",snacsObj$annHash$hashNames),cell_anno_name=c("snacs+DD","doubletD","snacsRnd2","snacsRnd1","bestSNPsCluster",snacsObj$annHash$hashNames),col_dend=TRUE,row_dend=FALSE,outputFileName=paste0("heatmap_",snacsObj$exptName),outputFormat="pdf")
 }
 
 ## ------------------------------
@@ -121,7 +128,7 @@ snacsExpt="SNACS7"
 dirOutput <- "../output/legend/"
 
 dirData <- "../data/"
-fName <- paste0("snacsObj_imp_",snacsExpt,"_unfilt.RData")
+fName <- paste0("snacsObj_",snacsExpt,"_unfilt.RData")
 load(paste0(dirData,fName))
 
 if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))

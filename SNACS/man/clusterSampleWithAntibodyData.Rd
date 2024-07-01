@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeSNACScall.R
 \name{clusterSampleWithAntibodyData}
 \alias{clusterSampleWithAntibodyData}
-\title{Assign sample IDs to cells based on hash antibody data}
+\title{Group cells based on hash antibody data}
 \usage{
 clusterSampleWithAntibodyData(
   snacsObj,
@@ -42,5 +42,5 @@ clusterSampleWithAntibodyData(
 \item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }
 \description{
-Assign sample IDs to cells based on hash antibody data
+A cell is assigned to a specific sample if the antibody expression of that sample is expressed highly for that cell. These initial classifications are used to select SNPs for making SNACS calls.
 }

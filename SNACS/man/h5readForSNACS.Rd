@@ -2,32 +2,30 @@
 % Please edit documentation in R/processData.R
 \name{h5readForSNACS}
 \alias{h5readForSNACS}
-\title{Read a HDF5 file and transform the data into a format that can be processed by SNACSList function. The datasets expected to be in the file are.
-CELL_BARCODES - vector of cell barcodes
-VARIANTS - vector of variant names
-GT - genotype data matrix
-ABS/clr - hash antibody data matrix
-AB_DESCRIPTIONS - hash names
-DP - total depth matrix
-AD - alternate depth matrix
-See h5read function in rhdf5 package and SNACSList function in SNACS packge for details}
+\title{Read a HDF5 file and transform it for easy processing by SNACS}
 \usage{
 h5readForSNACS(file)
 }
 \arguments{
-\item{file}{Character. Name of HDF5 file which has the data}
+\item{file}{Character. Name of HDF5 file}
 }
 \value{
-A list having objects that are needed to create a SNACS object
+A list of objects containing:
+mut Integer matrix. Matrix having mutation status as 0s and 1s. Rows depict SNPs and columns cells \if{html}{\out{<br>}}
+hashes Numeric matrix. Matrix having hash values as numeric data. Rows depict hashes and columns cells \if{html}{\out{<br>}}
+depthTotal Numeric matrix. Matrix having total depth values as numeric data. Rows depict SNPs and columns cells \if{html}{\out{<br>}}
+depthAlt Numeric matrix. Matrix having total alternate values as numeric data. Rows depict SNPs and columns cells \if{html}{\out{<br>}}
+annCell Data frame. Table of cell annotation. Default is NULL \if{html}{\out{<br>}}
+annSNP Data frame. Table of SNP annotation. Default is NULL \if{html}{\out{<br>}}
 }
 \description{
-Read a HDF5 file and transform the data into a format that can be processed by SNACSList function. The datasets expected to be in the file are.
-CELL_BARCODES - vector of cell barcodes
-VARIANTS - vector of variant names
-GT - genotype data matrix
-ABS/clr - hash antibody data matrix
-AB_DESCRIPTIONS - hash names
-DP - total depth matrix
-AD - alternate depth matrix
-See h5read function in rhdf5 package and SNACSList function in SNACS packge for details
+Read a HDF5 file and transform the data into a format that can be processed by SNACSList function. The datasets expected to be in the file are \if{html}{\out{<br>}}
+CELL_BARCODES - Character. Vector of cell barcodes \if{html}{\out{<br>}}
+VARIANTS - Character. Vector of variant names \if{html}{\out{<br>}}
+GT - Integer matrix. Matrix having genotype data where columns are cells and rows are SNPs \if{html}{\out{<br>}}
+ABS/clr - Numeric matrix. Matrix having hash antibody data where columns are cell and rows are hashes \if{html}{\out{<br>}}
+AB_DESCRIPTIONS - Character. Vector of hash names \if{html}{\out{<br>}}
+DP - Numeric matrix. Matrix of total depth data where columns are cells and rows are SNPs \if{html}{\out{<br>}}
+AD - Numeric matrix. Matrix of alternate depth data where columns are cells and rows are SNPs \if{html}{\out{<br>}}
+See h5read function in rhdf5 package and SNACSList function in SNACS package for details
 }

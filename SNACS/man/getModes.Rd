@@ -2,26 +2,26 @@
 % Please edit documentation in R/makeSNACScall.R
 \name{getModes}
 \alias{getModes}
-\title{Get mode of density function}
+\title{Detect density function modes}
 \usage{
 getModes(x, bw, adjust, signifi, from, to)
 }
 \arguments{
-\item{x}{.}
+\item{x}{Numeric. Hash antibody data}
 
-\item{bw}{.}
+\item{bw}{Character. Smoothing bandwidth parameter passed to density function}
 
-\item{adjust}{.}
+\item{adjust}{Character. Bandwidth adjustment factor parameter passed to density function}
 
-\item{signifi}{.}
+\item{signifi}{Numeric. Number of significant digits of the density modes, Used to order the modes}
 
-\item{from}{.}
+\item{from}{Numeric. left-most point value passed to density function}
 
-\item{to}{.}
+\item{to}{Numeric. right-most point value passed to density function}
 }
 \value{
 A vector of modes
 }
 \description{
-Get two mode density function of hash antibody data for background detection.
+Find the modes of the density function of the hash antibody distribution for background detection.
 }

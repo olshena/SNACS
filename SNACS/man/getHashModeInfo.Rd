@@ -7,9 +7,9 @@
 getHashModeInfo(mm, bw = "nrd0", verbose = FALSE)
 }
 \arguments{
-\item{mm}{.}
+\item{mm}{Numeric. Hash antibody data}
 
-\item{bw}{.}
+\item{bw}{Character. Smoothing bandwidth parameter passed to density function}
 
 \item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }
@@ -17,5 +17,5 @@ getHashModeInfo(mm, bw = "nrd0", verbose = FALSE)
 Mode and adjustment values
 }
 \description{
-Get mode information of two mode density function of hash antibody data for background detection.
+Get mode information of hash antibody distribution for background detection.
 }

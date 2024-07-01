@@ -15,5 +15,5 @@ imputeMissingMutations(snacsObj, verbose = FALSE)
 A SNACSList object
 }
 \description{
-Impute missing mutations in SNACSList object.
+Missing values in the mutation data are imputed using K-nearest neighbors (KNN) method.
 }

@@ -108,7 +108,7 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
 ###########################################################
 #' Select SNPs that best separate the hashes
 #'
-#' Group cells into constituent samples based on hash antibody data. Select the best SNPs that separate the cell groups using the mutation data.
+#' Group cells into constituent samples based on hash antibody data. Select the SNPs that best separate the groups.
 #'
 #' @param snacsObj SNACSList object
 #' @param numSNP Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3
@@ -127,7 +127,6 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
 #' @return A SNACSList object
 #' @export
 getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png"),verbose=FALSE) {
-    #snacsObj=snacsObj; numSNP=3; backgndThreshold=0.95; backgndThresRnd2=0.75; cellProportionAboveBackgnd=0.5; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; outputFormat=""
     
     bgndThresDetMethod=bgndThresDetMethod[1]
     
@@ -216,9 +215,9 @@ getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("a
 
 ###########################################################
 ###########################################################
-#' Cluster cells based on the SNP data
+#' Cluster cells based on SNP data
 #'
-#' Cluster cells, where the number of clusters is the number of constituent samples, using the mutation data with the selected SNPs. Generate heatmap of the mutation data.
+#' Cluster cells, where the number of clusters is the number of constituent samples, using the mutation data of select SNPs. Generate heatmap of the mutation data.
 #'
 #' @param snacsObj SNACSList object
 #' @param outputFormat Character. Output file type. "" outputs to the standard output. Default is "none" which does not plot anything
@@ -401,8 +400,7 @@ clusterCellsWithSNPdata=function(snacsObj,outputFormat=c("none","","pdf","png"),
 ####################################################################
 #' Make SNACS calls
 #'
-#' Make SNACS calls based on mutation and hash antibody data. The cluster information from the mutation data and the hash antibody data are used to make SNACS calls. Each cell is assigned one of the hash IDs (a single sample) or a set of hash IDs (a multiplet), when it is a mixture of samples. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of antibody for the hash. The clusters based on mutation data give a rough assignment of SNACS calls. The SNACS calls are refined by looking at the antibody data of the cells which cluster together. The cell clusters obtained from running "clusterCellsWithSNPdata" are split into sub-clusters and each sub-cluster is assigned a hash ID if enough cells in that group have a signal above the background for the corresponding hash. The sub-clusters are created using the cell clusters from the second round of hierarchical clustering of the mutation data. First the antibody measures of the top two cluster pairs are compared using Hotelling's T2 test. If there is significant difference , the two clusters are splits into sub-clusters and each of those cluster pairs are tested for difference. The tree is traversed until there are no pairs of significantly different cluster pairs. The splitting of a cluster stops when it reaches a minimum number of cells. The singlet and multiplet assignments are made to each of the sub-clusters using the hash antibody data. The antibody expression for a sample is expected to have a bimodal distribution representing a background, which are cells not from the sample, and a foreground, which are cells belonging to the sample. The background distribution is estimated by considering the data from the lower bound till the mode of the background and generating a symmetrical distribution from it. Then, the empirical cumulative distribution function of this distribution becomes the estimated background distribution. A sub-cluster is assigned the ID of each sample which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThreshold", of the hash background. A sub-cluster with multiple samples above their corresponding hash background is considered a multiplet. The result is stored in the column "snacsRnd1" in the "annCell" table of the SNACS object.
-#' The above SNACS calls are refined by detecting narrow regions of multiplets. The cells, ordered as in the clusters above, are segmented by applying circular binary segmentation (CBS) on the distance to the centroid of the SNACS call groups. A segment is assigned the ID of each hash which has at least a certain proportion of cells, defined by the parameter "cellProportionAboveBackgnd", with antibody expression above a certain quantile, defined by the parameter "backgndThresRnd2", of the hash background. A segment with multiple hashes above their corresponding hash background is considered a multiplet. Only narrow segments, specified by "maxClustSizeRnd2", are considered. The result is stored in the column "snacsRnd2" in the "annCell" table of the SNACS object
+#' The SNACS calls are made in two rounds. In round 1, the cells are clustered based on select SNPs. All cells in a cluster are assigned to a sample if > 50% of cells from that cluster have a hash expression that exceeds the 95th percentile of the background distribution for that sample. Clusters assigned to multiple hashes are designated as multiplets. In round 2, the multiplet detection is refined by segmenting the antibody data and assigning a segment to a sample when it has > 50% cells that exceeds the 75th percentile of the hash background. Only narrow segments (<=100 cells) are considered in this round. The results are stored in the columns "snacsRnd1" and "snacsRnd2" in the "annCell" table of the SNACS object
 #'
 #' @param snacsObj SNACSList object
 #' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100
@@ -418,8 +416,6 @@ clusterCellsWithSNPdata=function(snacsObj,outputFormat=c("none","","pdf","png"),
 #' @return A SNACSList object
 #' @export
 makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),maxClustSizeRnd2=100,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1,verbose=FALSE) {
-    #snacsObj=snacsObj; minSampleSize=100; cellProportionAboveBackgnd=0.5; minClustSize=2; clustComparePValue=10^-5; maxClustSampleSize=Inf; clustCompareMethod=c("t","hotelling"); maxClustSizeRnd2=100; dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"); cbsAlpha=0.1
-    
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
 
@@ -459,7 +455,7 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
     annHashBackgnd=snacsObj$annHashBackgnd
 
     ###########################################################
-    ## Make SNACS call round 1
+    ## Make SNACS Round 1 calls
     
     clustInfo$snacsRnd1="Multiplet"
     grp=clustInfo$clustId
@@ -583,7 +579,7 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
     )
 
     ###########################################################
-    ## Make SNACS call round 2
+    ## Make SNACS Round 2 calls
     
     if (makeSnacsCallRnd2) {
         ## Detect and assign narrow regions as multiplets
@@ -619,7 +615,6 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
         x=x[cellId]
 
         grp=snacsRnd1
-        #x[is.na(x)]="0"
         for (k in unique(x[!is.na(x)])) {
             j=cellId[which(x==k)]
             if (length(j)>maxClustSizeRnd2) next
@@ -697,9 +692,9 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
 
 ####################################################################
 ####################################################################
-#' Assign sample IDs to cells based on hash antibody data
+#' Group cells based on hash antibody data
 #'
-#' Assign sample IDs to cells based on hash antibody data
+#' A cell is assigned to a specific sample if the antibody expression of that sample is expressed highly for that cell. These initial classifications are used to select SNPs for making SNACS calls.
 #'
 #' @param snacsObj SNACSList object
 #' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100
@@ -714,20 +709,10 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @export
 clusterSampleWithAntibodyData=function(snacsObj,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,verbose=FALSE) {
-    #snacsObj=snacsObj; bgndThresDetMethod="automatic"; backgndThreshold=0.95; backgndThresRnd2=0.75; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; hashThreshold=NA; bgndQuantileThreshold=NA; bgndQuantileThresRnd2=NA
-
     bgndThresDetMethod=bgndThresDetMethod[1]
     
-    ## --------------------------------------
-    #dirOutput="../output/hashPairPlot/"
-    #if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
-
-    ## --------------------------------------
-    ## --------------------------------------
     
     hashMat=t(snacsObj$hashes)
-    ## --------------------------------------
-    ## --------------------------------------
 
     methodVec=bgndThresDetMethod; if (bgndThresDetMethod=="automatic") {methodVec=c("default modes","two modes")}
     tmp=rep(NA,length=nrow(snacsObj$annHash))
@@ -802,10 +787,9 @@ clusterSampleWithAntibodyData=function(snacsObj,minSampleSize=100,bgndThresDetMe
 
 ####################################################################
 ####################################################################
-#' Generate hash antibody background density plot
+#' Generate hash antibody background density plots
 #'
-#' The density plots are helpful is determining the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each subject. The top figure shows the distribution of a hash antibody. The middle figure shows the distribution of the background only. The red lines in the top and middle figures show the distribution of the estimated background of the hash antibody. The green lines mark the median and 95th percentile of the background distribution. The bottom figure is the histogram of the hash antibody data. The distribution of the antibody measure of a hash is expected to be a mixture of a background and a foreground signal where the latter signals the presence of that hash antibody. The background of the hash antibody is estimated by determining the background mode based on all cells and generating an empirical symmetric distribution around it.
-
+#' The density plots are helpful is understanding the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each sample. The top figure shows the distribution of a hash antibody. The background distribution, shown in red, is estimated by generating a symmetric distribution by reflecting the data to the left of the left mode about that mode. The green lines mark the median and 95th percentile of the background distribution. The middle figure shows just the estimated background distribution. The bottom figure is the histogram of the hash antibody data.
 #'
 #' @param snacsObj SNACSList object
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making first round of SNACS calls. Default is 0.95. Range is 0-1
@@ -828,12 +812,7 @@ generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProporti
         plotInfo=list(cexMain=2,cexLab=1.5,cexAxis=1.5)
     }
     
-    ## --------------------------------------
-    #dirOutput="../output/hashPairPlot/"
-    #if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
-    
     hashMat=t(snacsObj$hashes)
-    ## --------------------------------------
     ## --------------------------------------
 
     annHashBackgnd=snacsObj$annHashBackgnd
@@ -876,35 +855,33 @@ generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProporti
 
 ####################################################################
 ####################################################################
-#' Get mode of density function
+#' Detect density function modes
 #'
-#' Get two mode density function of hash antibody data for background detection.
+#' Find the modes of the density function of the hash antibody distribution for background detection.
 #'
-#' @param x .
-#' @param bw .
-#' @param adjust .
-#' @param signifi .
-#' @param from .
-#' @param to .
+#' @param x Numeric. Hash antibody data
+#' @param bw Character. Smoothing bandwidth parameter passed to density function
+#' @param adjust Character. Bandwidth adjustment factor parameter passed to density function
+#' @param signifi Numeric. Number of significant digits of the density modes, Used to order the modes
+#' @param from Numeric. left-most point value passed to density function
+#' @param to Numeric. right-most point value passed to density function
 #' @return A vector of modes
 #' @export
-getModes <- function(x,bw,adjust,signifi,from,to) {
-    #x=mm; bw="nrd0"; adjust=adjust; signifi=2; from=min(mm)-offsetMM; to=max(mm)+offsetMM
-    
-    den <- stats::density(x, kernel=c("gaussian"),bw=bw,adjust=adjust,from=from,to=to)
-    den.s <- stats::smooth.spline(den$x, den$y, all.knots=TRUE, spar=0.1)
-    s.1 <- stats::predict(den.s, den.s$x, deriv=1)
-    s.0 <- stats::predict(den.s, den.s$x, deriv=0)
-    den.sign <- sign(s.1$y)
-    a<-c(1,1+which(diff(den.sign)!=0))
-    b<-rle(den.sign)$values
-    df<-data.frame(a,b)
+getModes=function(x,bw,adjust,signifi,from,to) {
+    den=stats::density(x, kernel=c("gaussian"),bw=bw,adjust=adjust,from=from,to=to)
+    den.s=stats::smooth.spline(den$x, den$y, all.knots=TRUE, spar=0.1)
+    s.1=stats::predict(den.s, den.s$x, deriv=1)
+    s.0=stats::predict(den.s, den.s$x, deriv=0)
+    den.sign=sign(s.1$y)
+    a=c(1,1+which(diff(den.sign)!=0))
+    b=rle(den.sign)$values
+    df=data.frame(a,b)
     df = df[which(df$b %in% -1),]
-    modes<-s.1$x[df$a]
-    dens<-s.0$y[df$a]
-    df2<-data.frame(modes=modes,density=dens)
-    df2$sig<-signif(df2$density,signifi)
-    df2<-df2[with(df2, order(-sig)), ]
+    modes=s.1$x[df$a]
+    dens=s.0$y[df$a]
+    df2=data.frame(modes=modes,density=dens)
+    df2$sig=signif(df2$density,signifi)
+    df2=df2[with(df2,order(-sig)),]
     
     df2[order(df2$modes),]
 }
@@ -913,10 +890,10 @@ getModes <- function(x,bw,adjust,signifi,from,to) {
 ####################################################################
 #' Get mode information of density function
 #'
-#' Get mode information of two mode density function of hash antibody data for background detection.
+#' Get mode information of hash antibody distribution for background detection.
 #'
-#' @param mm .
-#' @param bw .
+#' @param mm Numeric. Hash antibody data
+#' @param bw Character. Smoothing bandwidth parameter passed to density function
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return Mode and adjustment values
 #' @export
@@ -927,7 +904,7 @@ getHashModeInfo=function(mm,bw="nrd0",verbose=FALSE) {
 
     dirn=""
     while (T) {
-        modeInfo<-getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
+        modeInfo=getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
 
         if (nrow(modeInfo)==2) {
             break
@@ -937,7 +914,7 @@ getHashModeInfo=function(mm,bw="nrd0",verbose=FALSE) {
                 #if (dirn=="dn") cat("dirn is down\n")
                 if (verbose) cat('Getting more than two modes for hash density function. Check hash density plots and SNACS heatmaps. Might try running function getBestSNPs with bgndThresDetMethod="manual"\n')
                 adjustThis=adjust=adjustPrev
-                modeInfo<-getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
+                modeInfo=getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
                 break
             }
             dirn="up"
@@ -947,12 +924,11 @@ getHashModeInfo=function(mm,bw="nrd0",verbose=FALSE) {
                 #if (dirn=="up") cat("dirn is up\n")
                 if (verbose) cat('Getting single mode for hash density function. Check hash density plots and SNACS heatmaps. Might try running function getBestSNPs with bgndThresDetMethod="manual"\n')
                 adjustThis=adjust=adjustPrev
-                modeInfo<-getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
+                modeInfo=getModes(mm,bw=bw,adjust=adjust,2,min(mm)-offsetMM,max(mm)+offsetMM)
                 break
             }
             dirn="dn"
         }
-        #adjustPrev=adjust
         adjust=adjustThis
     }
     
