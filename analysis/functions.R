@@ -15,86 +15,14 @@ setExptName <- function(snacsObj,exptName) {
 
 ## ------------------------------
 ## Get experiment infomation from SNACS metadata Excel file
-getExptInfoData_old <- function(fileName="../data/SNACS_Metadata.csv") {
-phen = read.csv(fileName)
-phen=as.data.frame(phen,stringsAsFactors=F)
-names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
-        c("run","patient","hash")
-phen$hash=sub("-",".",phen$hash)
-phen$patId=as.integer(as.factor(phen$patient))
-phen$hashId=as.integer(as.factor(phen$hash))
-
-    invisible(phen)
-}
-
-## ------------------------------
-## Get experiment infomation from SNACS metadata Excel file
-getExptInfoData <- function(fileName="SNACS2_Metadata.xlsx",dirName="../data/",modified=F) {
-    #fileName="SNACS2_Metadata.xlsx"; dirName=dirInput
-    
-    phen1=phen2=NULL
-    for (fId in 1:length(fileName)) {
-        fNameThis=fileName[fId]
-        if (fNameThis=="SNACS_Metadata.csv") {
-            phen = read.csv(paste0(dirName,fNameThis))
-            phen=as.data.frame(phen,stringsAsFactors=F)
-            names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
-                    c("run","patient","hash")
-            phen$hash=sub("-",".",phen$hash)
-            phen$patId=as.integer(as.factor(phen$patient))
-            phen$hashId=as.integer(as.factor(phen$hash))
-        } else {
-            library(readxl)
-            phen=readxl::read_xlsx(paste0(dirName,fNameThis),sheet=1)
-            phen=as.data.frame(phen,stringsAsFactors=F)
-            names(phen)[match(c("Run","Patient","Hash","Total Number Cells","Missing Data (Unfiltered)"),names(phen))]=
-                c("run","patient","hash","numCell","missGenoUnfilt")
-            phen=phen[!is.na(phen$hash),c("run","patient","hash","numCell","missGenoUnfilt")]
-            p1=which(!is.na(phen$run)); p2=c(p1[2:length(p1)]-1,nrow(phen))
-            for (p in 1:length(p1)) {
-                for (k in c("run","numCell","missGenoUnfilt")) phen[p1[p]:p2[p],k]=phen[p1[p],k]
-                j=which(is.na(phen$sample[p1[p]:p2[p]]))
-                if (length(j)!=0) for (k in c("patient")) phen[p1[p]:p2[p],k]=phen[p1[p],k]
-
-            }
-            for (k in "numCell") phen[,k]=as.integer(phen[,k])
-            for (k in "missGenoUnfilt") phen[,k]=as.numeric(phen[,k])
-            phen$hash=sub("-",".",sub("?","",phen$hash,fixed=T))
-            
-            phen$hash[which(phen$run=="SNACS9")]="TS.5"
-            tbl=phen[which(phen$run%in%c("SNACS9","SNACS11")),]
-            tbl$patient[which(tbl$run=="SNACS9")]="Patient F"
-            tbl$hash[which(tbl$run=="SNACS9")]="TS.6"
-            tbl$patient[which(tbl$run=="SNACS11")]="Patient H"
-            tbl$hash[which(tbl$run=="SNACS11")]="TS.8"
-            phen=rbind(phen,tbl)
-
-            phen$hash[phen$hash=="None"]=NA
-            phen$patId=as.integer(as.factor(phen$patient))
-            phen$hashId=as.integer(as.factor(phen$hash))
-            #phen=phen[!is.na(phen$numCell),]
-            
-            if (modified) {
-                j=which(phen$run%in%paste0("SNACS",9:12))
-                tmp=phen[j,]
-                tmp$run[which(tmp$run=="SNACS9")]="SNACS105"
-                tmp$run[which(tmp$run=="SNACS10")]="SNACS106"
-                tmp$run[which(tmp$run=="SNACS11")]="SNACS127"
-                tmp$run[which(tmp$run=="SNACS12")]="SNACS128"
-                tmp$patient[which(tmp$run=="SNACS105")]="Patient E"
-                tmp$patient[which(tmp$run=="SNACS106")]="Patient F"
-                tmp$patient[which(tmp$run=="SNACS127")]="Patient G"
-                tmp$patient[which(tmp$run=="SNACS128")]="Patient H"
-                phen[j,]=tmp
-                phen=phen[order(phen$run),]
-                phen$run[which(duplicated(phen$run))]=""
-            }
-        }
-        phen=phen[,c("run","patient","hash","patId","hashId")]
-
-        if (fNameThis=="SNACS_Metadata.csv") {phen1=phen} else {phen2=phen}
-    }
-    phen=rbind(phen1,phen2)
+getExptInfoData <- function(fileName="../data/SNACS_Metadata.csv") {
+    phen = read.csv(fileName)
+    phen=as.data.frame(phen,stringsAsFactors=F)
+    names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
+            c("run","patient","hash")
+    phen$hash=sub("-",".",phen$hash)
+    phen$patId=as.integer(as.factor(phen$patient))
+    phen$hashId=as.integer(as.factor(phen$hash))
 
     invisible(phen)
 }
@@ -107,22 +35,12 @@ setSingleExptInfo=function(snacsObj,procLev="init") {
     switch(exptNameMult,
         "SNACS5"={exptNameSingle=paste0("SNACS",1:2)},
         "SNACS6"={exptNameSingle=paste0("SNACS",2:4)},
-        "SNACS7"={exptNameSingle=paste0("SNACS",1:4)},
-        "SNACS13"={exptNameSingle=paste0("SNACS",c(105,106,127,128))},
-        "SNACS14"={exptNameSingle=paste0("SNACS",c(105,106,127,128))},
-        "SNACS15"={exptNameSingle=paste0("SNACS",c(1:4,105,106,127,128))},
-        "SNACS16"={exptNameSingle=paste0("SNACS",c(1:4,105,106,127,128))}
+        "SNACS7"={exptNameSingle=paste0("SNACS",1:4)}
     )
     patId=order(snacsObj$annHash$patient)
     snacsObj$annHash$exptName=paste0(exptNameSingle[patId])
     
     processLevels=rep("init",nrow(snacsObj$annHash))
-    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="impAcc1415"
-    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="impAcc14to16"
-    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="impAccSD14to16"
-    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="s1snp14to16"
-    #processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]="callSnp14to16_impSnp14to16"
-    processLevels[which(snacsObj$annHash$exptName%in%paste0("SNACS",c(105,106,127,128)))]=procLev
     snacsObj$annHash$processLevels=processLevels
 
     invisible(snacsObj)
@@ -133,7 +51,6 @@ setSingleExptInfo=function(snacsObj,procLev="init") {
 getHTOdemuxCall <- function(snacsObj,dirName="../data/SNACS_HTOdemux/") {
     exptName=strsplit(snacsObj$exptName,"_")[[1]][1]
     if (exptName%in%paste0("SNACS",1:7)) {
-        #fName=paste0(sub("_unfilt","",snacsObj$exptName),"_HTOdemux.csv")
         fName=paste0(exptName,"_HTOdemux.csv")
         dat=read.table(paste0(dirName,fName),sep=",",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
         names(dat)=c("id","hashCall")
@@ -143,7 +60,6 @@ getHTOdemuxCall <- function(snacsObj,dirName="../data/SNACS_HTOdemux/") {
         j=match(snacsObj$annCell$desc,dat$id); j1=which(!is.na(j)); j2=j[j1]
         snacsObj$annCell$HTOdemux="Missing"
         snacsObj$annCell$HTOdemux[j1]=dat$hashCall[j2]
-        #snacsObj$annCell$HTOdemux[which(snacsObj$annCell$HTOdemux=="")]=NA
     } else {
         snacsObj$annCell$HTOdemux=""
     }
@@ -155,10 +71,8 @@ getHTOdemuxCall <- function(snacsObj,dirName="../data/SNACS_HTOdemux/") {
 ## get SNP description
 
 getSNPdesc.int=function(desc) {
-    #length(strsplit(desc,":")[[1]])
     y=strsplit(desc,":")[[1]]
     if (length(y)==4) descOut=paste0(y[2:4],collapse=":") else descOut=desc
-    #length(strsplit(descOut,":")[[1]])
     descOut
 }
 
@@ -323,7 +237,6 @@ plotHashPair=function(snacsObj,hashCallMismatch=3,dirData2="../output/accuracy/"
     
     ## Plot hash pairs
     pdf(paste0(dirOutput,"plotHashPair_",snacsObj$exptName,"_hashRnd",hashCallMismatch,".pdf"))
-    #par(mfrow=c(3,3))
     for (hId1 in 1:(nrow(snacsObj$annHash)-1)) {
         hashId1=snacsObj$annHash$hashNames[hId1]
         for (hId2 in (hId1+1):nrow(snacsObj$annHash)) {
@@ -374,7 +287,6 @@ createAnnotatedHeatmap <- function(snacsObj,dirOutput="../output/heatmap/") {
     grpUniq2=grpUniq2[which(!grpUniq2%in%hashInfo$hashNames)]
     grpUniqSD=c()
     if ("doubletD"%in%names(snacsObj$annCell)) {
-        #col_var_info[["doubletD"]]=list(color=c("navy","gray85"),level=c("Singlet","Doublet"))
         col_var_info[["doubletD"]]=list(color=c("navy","white"),level=c("Singlet","Doublet"))
     }
     if ("snacsPlusDoubletD"%in%names(snacsObj$annCell)) {
@@ -425,17 +337,13 @@ createAnnotatedHeatmap <- function(snacsObj,dirOutput="../output/heatmap/") {
 
     col_dend=T; row_dend=F
     zlm=c(0,1)
-    #heatmap_color=c("orangered1","royalblue3","white")
     heatmap_color=c("navy","gray85","orangered1")
     input_legend=T
-    #annCell=cbind(hash=snacsObj$annCell$snacsRnd1,clustSplitRnd1=snacsObj$annCell$clustSplitRnd1,subClustRnd1=snacsObj$annCell$subClustRnd1,as.data.frame(t(snacsObj$hashes)),stringsAsFactors=F)
     if (length(grpUniq)!=0) {
-        #tbl=100*snacsObj$dist2centroidMat
         tbl=snacsObj$dist2centroidMat
         tbl=as.data.frame(t(tbl))
         colnames(tbl)=paste0("dist2centr_",colnames(tbl))
         annCell=cbind(snacsRnd1=snacsObj$annCell$snacsRnd1,clustSplitRnd1=snacsObj$annCell$clustSplitRnd1,snacsRnd2=snacsObj$annCell$snacsRnd2,clustSplitRnd2=snacsObj$annCell$clustSplitRnd2,as.data.frame(t(snacsObj$hashes)),stringsAsFactors=F)
-        #annCell=cbind(hash=snacsObj$annCell$snacsRnd1,clustSplitRnd1=snacsObj$annCell$clustSplitRnd1,snacsRnd2=snacsObj$annCell$snacsRnd2,clustSplitRnd2=snacsObj$annCell$clustSplitRnd2,as.data.frame(t(snacsObj$hashes)),tbl,stringsAsFactors=F)
         if ("HTOdemux"%in%names(snacsObj$annCell)) {
             annCell=cbind(hashHTOdemux=snacsObj$annCell$HTOdemux,annCell)
         }
@@ -611,13 +519,8 @@ getTruthCall=function(snacsObj,fName,dirTrueHashCall="../output/accuracy/trueHas
 ## dirOutput Folder where output plots and tables are to be saved
 
 getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,procLev="init",exptNameSingleSuffix="",dirData="../data/accuracy/",dirTrueHashCall="../output/accuracy/trueHashCall/",dirOutput="../output/accuracy/",writeOutput="ambiguousGeno") {
-    #snacsRnd=snacsRnd[1]
     hashCallMismatch=hashCallMismatch[1]
-    
-    if (F) {
-        load("/Users/royr/UCSF/singleCell/snacsExpt_1to8sample/data/snacsObj_SNACS14_unfilt.RData")
-        hashCallMismatch=2; accuracy=F; exptNameSingleSuffix="_unfilt"; dirData="../data/accuracy/"; dirTrueHashCall="../output/accuracy/trueHashCall/"; dirOutput="../output/accuracy/"; writeOutput="ambiguousGeno"
-    }
+
     
     if (!file.exists(dirData)) dir.create(file.path(dirData))
     if (!file.exists(dirOutput)) dir.create(file.path(dirOutput))
@@ -631,16 +534,7 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
 
     dirDataMain="../data/"
 
-    if (F) {
-        phen=getExptInfoData()
-        x=table(phen$run,phen$patient)
-        k=apply(x,1,function(x) {sum(x!=0)==1})
-        phen=phen[which(phen$run%in%rownames(x)[k]),]
-        snacsObj$annHash$exptName=phen$run[match(snacsObj$annHash$patient,phen$patient)]
-    } else {
-        #phen=getExptInfoData(fileName=c("SNACS_Metadata.csv","SNACS2_Metadata.xlsx"),dirName="../data/")
-        snacsObj=setSingleExptInfo(snacsObj,procLev=procLev)
-    }
+    snacsObj=setSingleExptInfo(snacsObj,procLev=procLev)
     snacsObj$annSNP$desc=getSNPdesc(snacsObj$annSNP$desc)
 
     if ("snacsPlusDoubletD"%in%names(snacsObj$annCell)) {
@@ -678,7 +572,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
         tbl[,colId]=snacsObj$annCell$hashCall_truth
         tbl[,colId][which(tbl[,colId]==x)]=NA
         tbl[,colId][is.na(snacsObj$annCell$hashCall_truth) | snacsObj$annCell$hashCall_truth=="Ambiguous"]=NA
-        #tbl[,colId][which(snacsObj$annCell$hashCall_truth!="Multiplet")]=NA
     }
     snacsObj$annCell=cbind(snacsObj$annCell,tbl)
 
@@ -695,7 +588,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
     snacsObj=snacsObj0
 
     exptNameMult=snacsObj$exptName
-    #exptNameSingleVec=paste0(unique(phen$run[phen$patient%in%snacsObj$annHash$patient]),exptNameSingleSuffix)
     exptNameSingleVec=paste0(snacsObj$annHash$exptName,exptNameSingleSuffix)
     exptNameVec=c(exptNameMult,exptNameSingleVec)
 
@@ -765,7 +657,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
                 samPair=c(samPair,samIdThis)
             }
             snpInfoCom=data.frame(id,dirn,samPair)
-            #dirnAmb=dirnUniq[!dirnUniq%in%snpInfoCom$dirn]
         }
         
         dirnAmb=snpInfo$samPair
@@ -774,7 +665,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
             if (F) {
                 genoAmpSamInfo=data.frame(exptName=rep(strsplit(snacsObj$exptName,"_")[[1]][1],length(dirnAmb)),dirn=dirnAmb,samId1=dirnAmb,samId2=dirnAmb)
                 for (k in 1:length(dirnAmb)) {
-                    #x=strsplit(gsub("up|down","",dirnAmb[k]),"_")[[1]]
                     x=strsplit(dirnAmb[k],"_")[[1]]
                     samIdThis=patInfoAll$exptName[match(x,patInfoAll$hash)]
                     genoAmpSamInfo$samId1[k]=samIdThis[1]
@@ -790,7 +680,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
 
 
     ## ------------------------------
-    #snpMat=matrix(nrow=length(snpName),ncol=length(exptNameVec),dimnames=list(snacsObj$annSNP$id[match(snpName,snacsObj$annSNP$desc)],sapply(exptNameVec,function(x) {strsplit(x,"_")[[1]][1]},USE.NAMES=F)))
     snpMat=matrix(nrow=length(snpName),ncol=length(exptNameVec))
     colnames(snpMat)=exptNameVec
     
@@ -800,39 +689,35 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
             ## Create SNACS object for multi-patient experient with common SNPs
             snacsObj=snacsObj0
             
-            if (T) {
-                
-                ## Get unimputed mutation
-                snacsObj$mutUnimp=snacsObj$mut
-                i=match(snacsObj$annSNP$id,rownames(snacsObj$missing))
-                j=match(snacsObj$annCell$id,colnames(snacsObj$missing))
-                snacsObj$missing=snacsObj$missing[i,j]
-                snacsObj$mutUnimp[snacsObj$missing]=9
-                if (length(i)==1) {
-                    snacsObj$missing=matrix(snacsObj$missing,nrow=1)
-                }
-
-                ii=match(snpName,snacsObj$annSNP$desc)
-                ## Get genotype of SNPs not in single experiments for each cell in the experiment
-                if (1%in%ii) genotype=rep("-",ncol(snacsObj$mut)) else genotype=as.character(snacsObj$mut[1,])
-                if (nrow(snacsObj$mut)>1) {
-                    for (i in 2:nrow(snacsObj$mut)) {
-                        if (i%in%ii) genotype=paste(genotype,rep("-",ncol(snacsObj$mut))) else genotype=paste(genotype,snacsObj$mut[i,])
-                    }
-                }
-                snacsObj$annCell$genotypeNA=genotype
-                ## Get genotype of SNPs not in single experiments for each cell in the experiment for unimputed data
-                if (1%in%ii) genotype=rep("-",ncol(snacsObj$mutUnimp)) else genotype=as.character(snacsObj$mutUnimp[1,])
-                if (nrow(snacsObj$mutUnimp)>1) {
-                    for (i in 2:nrow(snacsObj$mutUnimp)) {
-                        if (i%in%ii) genotype=paste(genotype,rep("-",ncol(snacsObj$mutUnimp))) else genotype=paste(genotype,snacsObj$mutUnimp[i,])
-                    }
-                }
-                snacsObj$annCell$genoUnimpNA=genotype
+            ## Get unimputed mutation
+            snacsObj$mutUnimp=snacsObj$mut
+            i=match(snacsObj$annSNP$id,rownames(snacsObj$missing))
+            j=match(snacsObj$annCell$id,colnames(snacsObj$missing))
+            snacsObj$missing=snacsObj$missing[i,j]
+            snacsObj$mutUnimp[snacsObj$missing]=9
+            if (length(i)==1) {
+                snacsObj$missing=matrix(snacsObj$missing,nrow=1)
             }
 
+            ii=match(snpName,snacsObj$annSNP$desc)
+            ## Get genotype of SNPs not in single experiments for each cell in the experiment
+            if (1%in%ii) genotype=rep("-",ncol(snacsObj$mut)) else genotype=as.character(snacsObj$mut[1,])
+            if (nrow(snacsObj$mut)>1) {
+                for (i in 2:nrow(snacsObj$mut)) {
+                    if (i%in%ii) genotype=paste(genotype,rep("-",ncol(snacsObj$mut))) else genotype=paste(genotype,snacsObj$mut[i,])
+                }
+            }
+            snacsObj$annCell$genotypeNA=genotype
+            ## Get genotype of SNPs not in single experiments for each cell in the experiment for unimputed data
+            if (1%in%ii) genotype=rep("-",ncol(snacsObj$mutUnimp)) else genotype=as.character(snacsObj$mutUnimp[1,])
+            if (nrow(snacsObj$mutUnimp)>1) {
+                for (i in 2:nrow(snacsObj$mutUnimp)) {
+                    if (i%in%ii) genotype=paste(genotype,rep("-",ncol(snacsObj$mutUnimp))) else genotype=paste(genotype,snacsObj$mutUnimp[i,])
+                }
+            }
+            snacsObj$annCell$genoUnimpNA=genotype
+
             i=match(snpName,snacsObj$annSNP$desc)
-            #j=match(annCellAll$id,snacsObj$annCell$id)
             j=1:nrow(snacsObj$annCell)
             snacsObj$mut=snacsObj$mut[i,j]
             snacsObj$annSNP=snacsObj$annSNP[i,]
@@ -843,20 +728,9 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
             }
             
             ## Get unimputed mutation
-            if (F) {
-                snacsObj$mutUnimp=snacsObj$mut
-                i=match(snacsObj$annSNP$id,rownames(snacsObj$missing))
-                j=match(snacsObj$annCell$id,colnames(snacsObj$missing))
-                snacsObj$missing=snacsObj$missing[i,j]
-                snacsObj$mutUnimp[snacsObj$missing]=9
-                if (length(i)==1) {
-                    snacsObj$missing=matrix(snacsObj$missing,nrow=1)
-                }
-            } else {
-                snacsObj$mutUnimp=snacsObj$mutUnimp[i,j]
-                if (length(i)==1) {
-                    snacsObj$mutUnimp=matrix(snacsObj$mutUnimp,nrow=1)
-                }
+            snacsObj$mutUnimp=snacsObj$mutUnimp[i,j]
+            if (length(i)==1) {
+                snacsObj$mutUnimp=matrix(snacsObj$mutUnimp,nrow=1)
             }
 
             snacsObj <- getHTOdemuxCall(snacsObj=snacsObj)
@@ -962,13 +836,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
         annCell=as.data.frame(t(snacsObj$hashes[nrow(snacsObj$hashes):1,]))
         nm=rev(snacsObj$annHash$hashNames)
         if (exptNameVec[eId]==exptNameMult) {
-            #annCell=snacsObj$annCell[,c("genotype","patient","snacsRnd1","clustSplitRnd1","snacsRnd2","clustSplitRnd2","HTOdemux")]
-            #names(annCell)=c("genotype","patient","hashRnd1","clustSplitRnd1","hashRnd2","clustSplitRnd2","hashHTOdemux")
-            #annCell=cbind(snacsObj$annCell[,c("meanQuality","meanTotalDepth","snacsRnd1","clustSplitRnd1",paste0("snacsRnd",hashCallMismatch,"_truth_mismatch"),"hashCall_truth","snacsRnd2","clustSplitRnd2")],annCell)
-            #nm=c(c("quality","depth","hashRnd1","clustSplitRnd1","mismatch","truth","hashRnd2","clustSplitRnd2"),nm)
-            #annCell=cbind(snacsObj$annCell[,c("meanQuality","meanTotalDepth","snacsRnd1","clustSplitRnd1","snacsRnd3",paste0("snacsRnd",hashCallMismatch,"_truth_mismatch"),"hashCall_truth","snacsRnd2","clustSplitRnd2")],annCell)
-            #nm=c(c("quality","depth","hashRnd1","clustSplitRnd1","hashRnd3","mismatch","truth","hashRnd2","clustSplitRnd2"),nm)
-
             for (rId in snacsRndId) {
                 colId=paste0(c("snacsRnd","clustSplitRnd"),rId); colId=c(colId,paste0("snacsRnd",rId,"_truth_mismatch"))
                 colName=paste0(c("hashRnd","clustSplitRnd","mismatchRnd"),rId)
@@ -982,20 +849,9 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
             }
             annCell=cbind(hashCall_truth=snacsObj$annCell$hashCall_truth,annCell)
             nm=c("truth",nm)
-            #for (k in grep("truth",names(annCell))) annCell[which(is.na(annCell[,k]) | annCell[,k]=="Ambiguous"),k]=""
             for (k in grep("truth",names(annCell))) annCell[is.na(annCell[,k]),k]=""
 
-            if (F) {
-                #patInfo=cbind(sort(unique(annCell$hashCall_truth)),c("Multiplet",sub("Patient ","pat",snacsObj0$annHash$patient)))
-                #j=match(annCell$hashCall_truth,patInfo[,1])
-                #annCell$hashCall_truth=patInfo[j,2]
-                annCell$hashCall_truth[is.na(annCell$hashCall_truth)]=""
-                k=paste0("snacsRnd",hashCallMismatch,"_truth_mismatch")
-                annCell[is.na(annCell[,k]),k]=""
-            }
         } else {
-            #annCell=snacsObj$annCell[,c("genotype","patient")]
-            #names(annCell)=c("genotype","patient")
             colId=c("meanQuality","meanTotalDepth","patient")
             colName=c("quality","depth","patient")
             k=which(colId%in%names(snacsObj$annCell))
@@ -1012,12 +868,10 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
         snacsObj$col_var_info=col_var_info
         
         fName=paste0("_",snacsObj$exptName,"_",strsplit(exptNameMult,"_")[[1]][1],"snp")
-        #save(snacsObj,file=paste0(dirData,"snacsObj",fName,".RData"))
 
         header=paste0(snacsObj$exptName," (",snacsObj0$exptName," SNPs)")
         nameRow=paste0("SNP-",nrow(snacsObj$annSNP):1)
         if (exptNameVec[eId]==exptNameMult) {
-            #nameRow=paste0(nameRow," ",rev(snacsObj$annSNP$desc))
             nameRow=paste0(nameRow," ",snacsObj$annSNP$desc)
         }
         if (nrow(snacsObj$annSNP)==1) {
@@ -1031,14 +885,12 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
         col_dend=T; row_dend=F
         zlm=c(0,1); heatmap_color=c("navy","gray85","orangered1")
         input_legend=F
-        #png(paste0("heatmap",fName,".png"))
         pdf(paste0(dirOutput,"heatmapCommonSNP/heatmap",fName,".pdf"))
         clustObj=heatmap4::generate_heatmap(x=x,col_clust=snacsObj$hclustObj_bestSNPs,col_dend=T,row_dend=row_dend,col_info=annCell,col_anno=T,zlm=zlm,heatmap_color=heatmap_color,col_var_info=snacsObj$col_var_info,h_title=header,row_lab=T,row_lab_vtr=nameRow,input_legend=input_legend,plot_info=plot_info,densColor=30)
         dev.off()
 
         ## ------------------------------
         ## Write out cell-level table having genotype information
-        #colId=c("id","patient","meanQuality","meanTotalDepth","snacsRnd1","clustSplitRnd1","snacsRnd3","hashCall_truth",paste0("snacsRnd",snacsRndId,"_truth_mismatch"),"snacsRnd2","clustSplitRnd2","genotype","genoUnimputed")
         tbl=snacsObj$annCell[clustObj$colClust$order,]
         tbl=tbl[,which(!names(tbl)%in%"hashRnd1")]
         if (all(tbl$snacsRnd1=="Multiplet")) tbl=tbl[,which(!names(tbl)%in%"snacsRnd1")]
@@ -1051,7 +903,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
             } else if (hashCallMismatch==2) {colId="snacsRnd2"
             } else {colId="snacsRnd1"}
             patInfo=patInfoAll[match(c(snacsObj$annHash$hashNames,"Multiplet","Ambiguous"),patInfoAll$hash),]
-            #patInfo=cbind(c(snacsObj$annHash$hashNames,"Multiplet"),c(sub("Patient ","pat",snacsObj$annHash$patient),"Multiplet"))
             x0=snacsObj$annCell$hashCall_truth
             x0[which(x0=="Ambiguous")]=NA
             x=snacsObj$annCell[,colId]
@@ -1059,12 +910,10 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
             x=patInfo$pat[match(x,patInfo$hash)]
             y=data.frame(truth=snacsObj$annCell$hashCall_truth,snacs=x)
             y=y[which(!y$truth%in%c("Multiplet","Ambiguous")),]
-            #cat("\nAccuracy based on round ",hashCallMismatch,": ",round(mean(snacsObj$annCell$hashCall_truth==x,na.rm=T),2),"\n\n",sep="")
             cat("\nSens / spec / acc based on round ",hashCallMismatch,": ",
                 round(sum(snacsObj$annCell$hashCall_truth=="Multiplet" & x=="Multiplet",na.rm=T)/sum(snacsObj$annCell$hashCall_truth=="Multiplet",na.rm=T),2)," / ",
                 round(mean(y$truth==y$snacs,na.rm=T),2)," / ",
                 round(mean(x0==x,na.rm=T),2),"\n\n",sep="")
-            #print(table(truth=(snacsObj$annCell$hashCall_truth!="Multiplet"),snacs=(x!="Multiplet"),exclude=NULL))
             print(table(truth=snacsObj$annCell$hashCall_truth,snacs=x,exclude=NULL))
         }
     }
@@ -1090,7 +939,6 @@ getAnnoForAccuracy <- function(snacsObj,hashCallMismatch=c(3,2,1),accuracy=F,pro
             }
             if (any(genoAmpInfo$samId1!="")) {
                 genoAmpInfo=genoAmpInfo[!duplicated(paste(genoAmpInfo$genotype,genoAmpInfo$samId1,genoAmpInfo$samId2)) & genoAmpInfo$samId1!="",]
-                #genoAmpInfo=genoAmpInfo[genoAmpInfo$samId1!="",]
                 fName=paste0("_",snacsObj$exptName,"_",strsplit(exptNameMult,"_")[[1]][1],"snp")
                 write.table(genoAmpInfo,file=paste0(dirOutput,"ambiguousGeno/ambiguousGeno",fName,".txt"),col.names=T,row.names=F, sep="\t",quote=F)
             }
