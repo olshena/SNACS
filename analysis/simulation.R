@@ -1,6 +1,6 @@
 ###Simulate the minimum number of cells by sample
 
-dat=read.delim("summary_cell_experiment_1-7_14-16.txt",sep="\t",header=TRUE,row.names=1)
+dat=read.delim("summary_cell_experiment_for_simulation.txt",sep="\t",header=TRUE,row.names=1)
 
 ###Cell counts: Mean 5300, SD=2500, minimum=1500
 
