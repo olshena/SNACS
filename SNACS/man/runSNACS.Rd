@@ -29,7 +29,7 @@ runSNACS(
   dataTypeRnd2 = c("euclidean", "sum of squares", "log2 euclidean",
     "log2 sum of squares"),
   cbsAlpha = 0.1,
-  outputFormat = c("", "pdf", "png"),
+  outputFormat = c("", "pdf", "png", "none"),
   verbose = FALSE
 )
 }
@@ -80,7 +80,7 @@ runSNACS(
 
 \item{cbsAlpha}{Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of SNACS calls. Default is 0.1}
 
-\item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
+\item{outputFormat}{Character. Output file type. "none" means nothing is plotted. Default is "" which outputs to the standard output}
 
 \item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }

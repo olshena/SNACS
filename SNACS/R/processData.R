@@ -50,6 +50,8 @@ SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NUL
     if (is.matrix(depthTotal) & is.matrix(depthAlt)) {
         if (nrow(depthTotal)!=nrow(mut) | ncol(depthTotal)!=ncol(mut)) stop("depthTotal has to be a matrix of the same size as mut")
         if (nrow(depthAlt)!=nrow(mut) | ncol(depthAlt)!=ncol(mut)) stop("depthAlt has to be a matrix of the same size as mut")
+        colnames(depthTotal)=colnames(depthAlt)=annCell$id
+        rownames(depthTotal)=rownames(depthAlt)=annSNP$id
     } else {
         depthTotal=depthAlt=NULL
     }
@@ -261,7 +263,7 @@ h5readForSNACS=function(file) {
         colnames(depthAlt)=annCell$id
     }
 
-    invisible(list(mut=mutMat,hashes=hashes,depthTotal=depthTotal,depthAlt=depthAlt))
+    invisible(list(mut=mutMat,hashes=hashes,depthTotal=depthTotal,depthAlt=depthAlt,annCell=annCell,annSNP=annSNP))
 }
 
 ####################################################################
@@ -301,6 +303,9 @@ imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     
     ## Exclude cells with no or all mutations after imputation
     j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
+    if (length(j)<10) {
+        stop(paste0("Most or all cells with no or all mutations after imputation"))
+    }
     snacsObj$mut=snacsObj$mut[,j]
     snacsObj$hashes=snacsObj$hashes[,j]
     snacsObj$annCell=snacsObj$annCell[j,]

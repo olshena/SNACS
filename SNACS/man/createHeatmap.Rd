@@ -31,7 +31,7 @@ createHeatmap(
 
 \item{outputFileName}{Character. Output file name. Default is "heatmap"}
 
-\item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
+\item{outputFormat}{Character. Output file type. "none" means nothing is plotted. Default is "" which outputs to the standard output}
 
 \item{write2Table}{Logical. Write the cell & SNP annotation tables ordered as in heatmap. Default is FALSE}
 }

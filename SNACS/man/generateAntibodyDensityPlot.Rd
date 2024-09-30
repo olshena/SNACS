@@ -21,7 +21,7 @@ generateAntibodyDensityPlot(
 
 \item{cellProportionForModeDetection}{Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
 
-\item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
+\item{outputFormat}{Character. Default is "" which outputs to the standard output}
 }
 \description{
 The density plots are helpful is understanding the background distribution of a hash antibody. The plots are saved in "../output" folder of a "pdf" or "png" format is specified. There are 3 figures generated for each sample. The top figure shows the distribution of a hash antibody. The background distribution, shown in red, is estimated by generating a symmetric distribution by reflecting the data to the left of the left mode about that mode. The green lines mark the median and 95th percentile of the background distribution. The middle figure shows just the estimated background distribution. The bottom figure is the histogram of the hash antibody data.

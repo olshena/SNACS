@@ -17,7 +17,7 @@ getBestSNPs(
   hashThreshold = 0.5,
   bgndQuantileThreshold = NA,
   bgndQuantileThresRnd2 = NA,
-  outputFormat = c("", "pdf", "png"),
+  outputFormat = c("", "pdf", "png", "none"),
   verbose = FALSE
 )
 }
@@ -46,7 +46,7 @@ getBestSNPs(
 
 \item{bgndQuantileThresRnd2}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"}
 
-\item{outputFormat}{Character. Output file type. Default is "" which outputs to the standard output}
+\item{outputFormat}{Character. Output file type. "none" means nothing is plotted. Default is "" which outputs to the standard output}
 
 \item{verbose}{Logical. Prints information when running the method. Default is FALSE}
 }

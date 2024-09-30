@@ -7,7 +7,7 @@
 #' @param row_dend Logical. Displays SNP dendrogram. Default is FALSE
 #' @param h_title Character. Gives the heatmap output a title. Default is NULL
 #' @param outputFileName Character. Output file name. Default is "heatmap"
-#' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
+#' @param outputFormat Character. Output file type. "none" means nothing is plotted. Default is "" which outputs to the standard output
 #' @param write2Table Logical. Write the cell & SNP annotation tables ordered as in heatmap. Default is FALSE
 
 #' @return A SNACSList object
@@ -85,7 +85,8 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
         }
         multNames=sort(unique(multNames[!multNames%in%snacsObj$annHash$hashNames]))
     }
-    colVec=c(snacsObj$annHash$hashColors,grDevices::gray((1:length(multNames))/length(multNames)))
+    colVec=snacsObj$annHash$hashColors
+    if (length(multNames)!=0) colVec=c(colVec,grDevices::gray((1:length(multNames))/length(multNames)))
     multNames=c(snacsObj$annHash$hashNames,multNames)
     if ("doubletD"%in%names(snacsObj$annCell)) {
         col_var_info[["doubletD"]]=list(color=c("navy","white"),level=c("Singlet","Doublet"))

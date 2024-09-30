@@ -25,11 +25,11 @@
 #' @param maxClustSizeRnd2 Integer. Maximum number of cells required to be in a cluster for making second round of SNACS calls. Default is 100
 #' @param dataTypeRnd2 Character. Type of data to be used for splitting the cells when making second round of SNACS calls. Default is euclidean distance of the cells to the cluster means from first round of SNACS calls
 #' @param cbsAlpha Numeric. Significance level passed to DNAcopy::segment to for splitting the cells when making second round of SNACS calls. Default is 0.1
-#' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
+#' @param outputFormat Character. Output file type. "none" means nothing is plotted. Default is "" which outputs to the standard output
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=0.4,proportionMutatedPerSNP=c(0.05,0.95),proportionMutatedPerCell=c(0,1),numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),maxClustSizeRnd2=100,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1,outputFormat=c("","pdf","png"),verbose=FALSE) {
+runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=0.4,proportionMutatedPerSNP=c(0.05,0.95),proportionMutatedPerCell=c(0,1),numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),maxClustSizeRnd2=100,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
     bgndThresDetMethod=bgndThresDetMethod[1]
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
@@ -49,7 +49,7 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
         snacsObj=getBestSNPs(snacsObj,
             numSNP=numSNP,
             minSampleSize=minSampleSize,
-            bgndThresDetMethod=bgndThresDetMethod,
+            bgndThresDetMethod=bgndThresDetMethodThis,
             backgndThreshold=backgndThreshold,
             backgndThresRnd2=backgndThresRnd2,
             cellProportionAboveBackgnd=cellProportionAboveBackgnd,
@@ -122,11 +122,11 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
 #' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is 0.5
 #' @param bgndQuantileThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param bgndQuantileThresRnd2 Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
-#' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
+#' @param outputFormat Character. Output file type. "none" means nothing is plotted. Default is "" which outputs to the standard output
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png"),verbose=FALSE) {
+getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
     
     bgndThresDetMethod=bgndThresDetMethod[1]
     
@@ -135,7 +135,7 @@ getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("a
 
     ## -----------------------------------
     snacsObj=clusterSampleWithAntibodyData(snacsObj,minSampleSize=minSampleSize,bgndThresDetMethod=bgndThresDetMethod,backgndThreshold=backgndThreshold,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection,hashThreshold=hashThreshold,bgndQuantileThreshold=bgndQuantileThreshold,bgndQuantileThresRnd2=bgndQuantileThresRnd2)
-    generateAntibodyDensityPlot(snacsObj,backgndThreshold=backgndThreshold,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection,outputFormat=outputFormat)
+    if (outputFormat!="none") generateAntibodyDensityPlot(snacsObj,backgndThreshold=backgndThreshold,cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,cellProportionForModeDetection=cellProportionForModeDetection,outputFormat=outputFormat)
 
     ## Association of mutation status of each SNP with each sample cluster pair
     samUniq=snacsObj$annHash$hashNames
@@ -462,7 +462,7 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
     grpUniq=sort(unique(grp))
     for (gId in 1:length(grpUniq)) {
         j=which(grp==grpUniq[gId])
-        x=apply(hashMat[j,],2,mean,na.rm=T)
+        if (length(j)==1) x=hashMat[j,] else x=apply(hashMat[j,],2,mean,na.rm=T)
         clustInfo$snacsRnd1[j]=names(x)[which.max(x)]
     }
 
@@ -511,8 +511,12 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
                     } else {
                         pv=rep(NA,ncol(hashMatThis))
                         for (k in 1:ncol(hashMatThis)) {
-                            res=stats::t.test(hashMatThis[j,k]~grpThis,var.equal=T)
-                            pv[k]=res$p.value
+                            if (stats::sd(hashMatThis[j1,k])==0 & stats::sd(hashMatThis[j2,k])==0) {
+                                pv[k]=ifelse(hashMatThis[j1[1],k]==hashMatThis[j2[1],k],1,0)
+                            } else {
+                                res=stats::t.test(hashMatThis[j,k]~grpThis,var.equal=T)
+                                pv[k]=res$p.value
+                            }
                         }
                         pv=min(pv*ncol(hashMatThis))
                     }
@@ -564,7 +568,7 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
     centroid=matrix(nrow=ncol(hashMatThis),ncol=length(grpUniq),dimnames=list(colnames(hashMatThis),grpUniq))
     for (gId in 1:length(grpUniq)) {
         j=which(grp==grpUniq[gId])
-        centroid[,gId]=apply(hashMatThis[j,],2,mean,na.rm=T)
+        if (length(j)==1) centroid[,gId]=hashMatThis[j,] else centroid[,gId]=apply(hashMatThis[j,],2,mean,na.rm=T)
     }
     dist2centroidMat=matrix(nrow=length(grpUniq),ncol=nrow(hashMatThis),dimnames=list(grpUniq,rownames(hashMatThis)))
     j=which(grp%in%colnames(hashMatThis))
@@ -795,14 +799,15 @@ clusterSampleWithAntibodyData=function(snacsObj,minSampleSize=100,bgndThresDetMe
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making first round of SNACS calls. Default is 0.95. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
-#' @param outputFormat Character. Output file type. Default is "" which outputs to the standard output
+#' @param outputFormat Character. Default is "" which outputs to the standard output
 #' @export
 generateAntibodyDensityPlot=function(snacsObj,backgndThreshold=0.95,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,outputFormat=c("","pdf","png")) {
-    #snacsObj=snacsObj; backgndThreshold=0.95; cellProportionBelowBackgndMode=0.6; cellProportionForModeDetection=0.75; outputFormat=""
-    
     outputFormat=outputFormat[1]
 
     ## -----------------------------------
+    if (outputFormat=="none") {
+        return()
+    }
     if (outputFormat=="") {
         plotInfo=list(cexMain=1,cexLab=1,cexAxis=1)
     } else {
