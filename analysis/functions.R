@@ -20,6 +20,29 @@ getExptInfoData <- function(fileName="../data/SNACS_Metadata.csv") {
     phen=as.data.frame(phen,stringsAsFactors=F)
     names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
             c("run","patient","hash")
+    #phen$hash=sub("-",".",phen$hash)
+    phen$hash=make.names(phen$hash)
+    phen$hashId=as.integer(as.factor(phen$hash))
+    
+    k1=which(phen$run!="")
+    k2=c(k1[2:length(k1)]-1,nrow(phen))
+    for (k in 1:length(k1)) {
+        phen$run[k1[k]:k2[k]]=phen$run[k1[k]]
+    }
+    
+    phen$patient[which(phen$run=="SNACS4")]="Patient D"
+    phen$patId=as.integer(as.factor(phen$patient))
+
+    invisible(phen)
+}
+
+## ------------------------------
+## Get experiment infomation from SNACS metadata Excel file
+getExptInfoData.old <- function(fileName="../data/SNACS_Metadata.csv") {
+    phen = read.csv(fileName)
+    phen=as.data.frame(phen,stringsAsFactors=F)
+    names(phen)[match(c("Experiment","Patient","Hash"),names(phen))]=
+            c("run","patient","hash")
     phen$hash=sub("-",".",phen$hash)
     phen$patId=as.integer(as.factor(phen$patient))
     phen$hashId=as.integer(as.factor(phen$hash))

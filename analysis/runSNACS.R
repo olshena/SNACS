@@ -6,6 +6,8 @@
 library(SNACS)
 #library(heatmap4)
 #library(readxl)
+
+#source("../../SNACS/analysis/functions.R")
 #source("../analysis/functions.R")
 
 ####################################################################
@@ -57,9 +59,11 @@ for (exptName in paste0("SNACS",1:7)) {
     )
     h5toList=h5readForSNACS(file=paste0(dirDataRaw,fileName))
     
-    snacsObj=SNACSList(mut=h5toList$mut,hashes=h5toList$hashes[1:2,],exptName="SNACS5",hashColors=hashColors,
-                          depthTotal=h5toList$depthTotal,depthAlt=h5toList$depthAlt)
-    save(snacsObj,file=paste0(dirData,"snacsObj_init_",exptName,".RData"))
+    snacsObj=SNACSList(mut=h5toList$mut,hashes=h5toList$hashes[hashNames,],exptName=exptName,hashColors=hashColors[match(hashNames,c("TS.1","TS.2","TS.3","TS.4"))],
+                          depthTotal=h5toList$depthTotal,depthAlt=h5toList$depthAlt,annCell=h5toList$annCell,annSNP=h5toList$annSNP)
+    rm(h5toList)
+    snacsObj$annSNP$desc=getSNPdesc(snacsObj$annSNP$desc)
+    save(snacsObj,file=paste0(dirData,"snacsObj_init_",exptName,"_unfilt.RData"))
 }
 
 ## ------------------------------
