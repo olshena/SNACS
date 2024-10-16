@@ -119,7 +119,7 @@ runDoubletD=function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
     ###Calculate VAF, drops VAFs with divide by zero error and turns matrix into a vector
     vaf_values=as.matrix(df_alt/df_total)
     #vaf_values=df_alt/df_total
-    vaf_values=vaf_values[!is.na(vaf_values)]
+    vaf_values=vaf_values[!is.na(vaf_values) & is.finite(vaf_values)]
 
     ###Set parameters for doubletD
     delta=0.2
@@ -129,13 +129,13 @@ runDoubletD=function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
     threshold=log((1 - delta) / delta)
 
     ###Calc Alpha false neg and false pos, Precision
-    mean1_prec1=getBetaMOM(vaf_values[vaf_values <= 0.15])
+    mean1_prec1=getBetaMOM(vaf_values[which(vaf_values <= 0.15)])
     alpha_fp=mean1_prec1[1]
 
-    mean2_prec2=getBetaMOM(vaf_values[vaf_values >= 0.85])
+    mean2_prec2=getBetaMOM(vaf_values[which(vaf_values >= 0.85)])
     alpha_fn=1 - mean2_prec2[1]
 
-    mean3_prec3=getBetaMOM(vaf_values[(vaf_values > 0.15) & (vaf_values < 0.85)])
+    mean3_prec3=getBetaMOM(vaf_values[which((vaf_values > 0.15) & (vaf_values < 0.85))])
     precision=stats::median(c(mean1_prec1[2], mean2_prec2[2], mean3_prec3[2]))
 
     ###Set px_z
@@ -162,13 +162,13 @@ runDoubletD=function(snacsObj=NULL,depthTotal=NULL,depthAlt=NULL) {
         colnames(total)=m
         vaf=data.frame(reads/total)
 
-        loh_cells=vaf[vaf[, m] > 0.85, , drop = FALSE]
+        loh_cells=vaf[which(vaf[, m] > 0.85), , drop = FALSE]
         loh_cells=stats::na.omit(loh_cells)
 
-        wt_cells=vaf[vaf[, m] < 0.15, , drop = FALSE]
+        wt_cells=vaf[which(vaf[, m] < 0.15), , drop = FALSE]
         wt_cells=stats::na.omit(wt_cells)
 
-        het_cells=vaf[vaf[, m] < 0.85 & vaf[, m] > 0.15, , drop = FALSE]
+        het_cells=vaf[which(vaf[, m] < 0.85 & vaf[, m] > 0.15), , drop = FALSE]
         het_cells=stats::na.omit(het_cells)
 
         non_na_cells =  dim(loh_cells)[1] + dim(wt_cells)[1] + dim(het_cells)[1]
