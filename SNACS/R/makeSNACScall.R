@@ -35,7 +35,7 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
     dataTypeRnd2=dataTypeRnd2[1]
     outputFormat=outputFormat[1]
 
-    snacsObj=filterData(snacsObj,
+    snacsObjInit=filterData(snacsObj,
         proportionMissingPerSNP=proportionMissingPerSNP,
         proportionMissingPerCell=proportionMissingPerCell,
         proportionMutatedPerSNP=proportionMutatedPerSNP,
@@ -46,7 +46,7 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
     bgndThresDetMethodVec=bgndThresDetMethod
     if (bgndThresDetMethod=="automatic") bgndThresDetMethodVec=c("automatic","two modes")
     for (bgndThresDetMethodThis in bgndThresDetMethodVec) {
-        snacsObj=getBestSNPs(snacsObj,
+        snacsObj=getBestSNPs(snacsObjInit,
             numSNP=numSNP,
             minSampleSize=minSampleSize,
             bgndThresDetMethod=bgndThresDetMethodThis,
