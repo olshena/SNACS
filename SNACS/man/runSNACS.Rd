@@ -11,6 +11,7 @@ runSNACS(
   proportionMutatedPerSNP = c(0.05, 0.95),
   proportionMutatedPerCell = c(0, 1),
   numSNP = 3,
+  maxProportionMultiplet = 0.3,
   minSampleSize = 100,
   bgndThresDetMethod = c("automatic", "manual", "default modes", "two modes"),
   backgndThreshold = 0.95,
@@ -45,6 +46,8 @@ runSNACS(
 \item{proportionMutatedPerCell}{Numeric vector. Only cells having proportion of mutations within this range are considered. Default is c(0,1). Range is 0-1}
 
 \item{numSNP}{Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3}
+
+\item{maxProportionMultiplet}{Numeric. Maximum proportion of multiplet cells allowed. Default is 0.3. Range is 0-1}
 
 \item{minSampleSize}{Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100}
 

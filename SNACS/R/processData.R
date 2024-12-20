@@ -92,7 +92,7 @@ SNACSList=function(mut,hashes,exptName,depthTotal=NULL,depthAlt=NULL,annCell=NUL
         stop("annCell has to be a data frame with at least two columns - id and desc")
     }
 
-    snacsObj=list(mut=mut,hashes=hashes,exptName=exptName,depthTotal=depthTotal,depthAlt=depthAlt,annHash=annHash,annCell=annCell,annSNP=annSNP,processLevels="raw")
+    snacsObj=list(mut=mut,hashes=hashes,exptName=exptName,depthTotal=depthTotal,depthAlt=depthAlt,annHash=annHash,annCell=annCell,annSNP=annSNP,processLevels="raw",misc=list())
     
     #snacsObj=new("SNACSList",snacsObj)
     attr(snacsObj,"class")="SNACSList"

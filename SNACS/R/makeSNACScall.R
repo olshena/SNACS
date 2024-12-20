@@ -8,6 +8,7 @@
 #' @param proportionMutatedPerSNP Numeric vector. Only SNPs having proportion of mutations within this range are considered. Default is c(0.05,0.95). Range is 0-1
 #' @param proportionMutatedPerCell Numeric vector. Only cells having proportion of mutations within this range are considered. Default is c(0,1). Range is 0-1
 #' @param numSNP Integer. Number of pairs of SNPs (high in one sample / low in second sample and vice versa) that best separate sample-pairs. There will be s times n(n-1) number of SNPs where s is the number of SNPs and n is the number of samples. Default is 3
+#' @param maxProportionMultiplet Numeric. Maximum proportion of multiplet cells allowed. Default is 0.3. Range is 0-1
 #' @param minSampleSize Integer. Minimum number of cells that is estimated by SNACS to be in a constituent sample. Gives a warning if below this number. Default is 100
 #' @param bgndThresDetMethod Character. Method for detecting threshold of background antibody distribution. Default is "automatic"
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making first round of SNACS calls. Default is 0.95. Range is 0-1
@@ -29,7 +30,7 @@
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=0.4,proportionMutatedPerSNP=c(0.05,0.95),proportionMutatedPerCell=c(0,1),numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),maxClustSizeRnd2=100,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
+runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=0.4,proportionMutatedPerSNP=c(0.05,0.95),proportionMutatedPerCell=c(0,1),numSNP=3,maxProportionMultiplet=0.3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),maxClustSizeRnd2=100,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
     bgndThresDetMethod=bgndThresDetMethod[1]
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
@@ -42,6 +43,7 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
         proportionMutatedPerCell=proportionMutatedPerCell,
         verbose=verbose)
 
+    
     done=T
     bgndThresDetMethodVec=bgndThresDetMethod
     if (bgndThresDetMethod=="automatic") bgndThresDetMethodVec=c("automatic","two modes")
@@ -52,7 +54,6 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
             bgndThresDetMethod=bgndThresDetMethodThis,
             backgndThreshold=backgndThreshold,
             backgndThresRnd2=backgndThresRnd2,
-            cellProportionAboveBackgnd=cellProportionAboveBackgnd,
             cellProportionBelowBackgndMode=cellProportionBelowBackgndMode,
             cellProportionForModeDetection=cellProportionForModeDetection,
             hashThreshold=hashThreshold,
@@ -63,17 +64,21 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
         snacsObj=imputeMissingMutations(snacsObj,verbose=verbose)
 
         snacsObj=clusterCellsWithSNPdata(snacsObj,outputFormat="none")
-            
-        snacsObj=makeSnacsCall(snacsObj,
-            minSampleSize=minSampleSize,
-            cellProportionAboveBackgnd=cellProportionAboveBackgnd,
-            minClustSize=minClustSize,
-            clustComparePValue=clustComparePValue,
-            maxClustSampleSize=maxClustSampleSize,
-            clustCompareMethod=clustCompareMethod,
-            maxClustSizeRnd2=maxClustSizeRnd2,
-            dataTypeRnd2=dataTypeRnd2,
-            cbsAlpha=cbsAlpha)
+        
+        for (cellPropAboveBgndThis in seq(cellProportionAboveBackgnd,1,by=0.05)) {
+            snacsObj=makeSnacsCall(snacsObj,
+                minSampleSize=minSampleSize,
+                cellProportionAboveBackgnd=cellPropAboveBgndThis,
+                minClustSize=minClustSize,
+                clustComparePValue=clustComparePValue,
+                maxClustSampleSize=maxClustSampleSize,
+                clustCompareMethod=clustCompareMethod,
+                maxClustSizeRnd2=maxClustSizeRnd2,
+                dataTypeRnd2=dataTypeRnd2,
+                cbsAlpha=cbsAlpha)
+                
+            if (mean(!snacsObj$annCell$snacsRnd1%in%snacsObj$annHash$hashNames,na.rm=T)<=maxProportionMultiplet) break
+        }
             
         for (snacsCallRnd in c("snacsRnd1","snacsRnd2")) {
             snacsCallThis=snacsObj$annCell[,snacsCallRnd]
@@ -116,7 +121,6 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
 #' @param bgndThresDetMethod Character. Method for detecting threshold of background antibody distribution. Default is "automatic"
 #' @param backgndThreshold Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making first round of SNACS calls. Default is 0.95. Range is 0-1
 #' @param backgndThresRnd2 Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of SNACS calls. Default is 0.75. Range is 0-1
-#' @param cellProportionAboveBackgnd Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
 #' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is 0.5
@@ -126,7 +130,7 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
+getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
     
     bgndThresDetMethod=bgndThresDetMethod[1]
     
@@ -670,6 +674,8 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
         snacsObj$annCell$clustSplitRnd2=clustSplitRnd2
         snacsObj$annCell$subClustRnd2=subClustRnd2
     }
+    
+    snacsObj$misc$cellProportionAboveBackgnd=cellProportionAboveBackgnd
     
     if (verbose) cat('"snacs" column(s) added to "annCell" table in SNACS object\n\n',sep="")
 
