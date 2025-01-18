@@ -125,8 +125,11 @@ createHeatmap=function(snacsObj,cell_anno_var,cell_anno_name=NULL,col_dend=T,row
     
     ## Generate heatmap
     if (outputFormat=="none") {
-        distMat=distfun(t(snacsObj$mut))
-        clustObj=list(colClust=stats::hclust(distMat,method=linkMethod))
+        if (F) {
+            distMat=distfun(t(snacsObj$mut))
+            clustObj=list(colClust=stats::hclust(distMat,method=linkMethod))
+        }
+        clustObj=heatmap4::generate_heatmap(x=snacsObj$mut,plotHeatmap=F,distfun=distfun,methodR=linkMethod,methodC=linkMethod,col_anno=T,row_anno=hasRowAnno,col_info=snacsObj$annCell,row_info=snacsObj$annSNP,col_dend=col_dend,row_dend=row_dend,col_lab=F,row_lab=F,zlm=limHM,ncc=ncc,ncr=ncr,heatmap_color=heatmap_color,col_anno_var=cell_anno_var,col_anno_name=cell_anno_name,col_var_info=col_var_info,row_anno_var=snp_anno_var,row_anno_name=snp_anno_name,row_var_info=row_var_info,densColor=NULL,h_title=h_title,plot_info=plotInfo,input_legend=showLegend)
     } else {
         clustObj=heatmap4::generate_heatmap(x=snacsObj$mut,distfun=distfun,methodR=linkMethod,methodC=linkMethod,col_anno=T,row_anno=hasRowAnno,col_info=snacsObj$annCell,row_info=snacsObj$annSNP,col_dend=col_dend,row_dend=row_dend,col_lab=F,row_lab=F,zlm=limHM,ncc=ncc,ncr=ncr,heatmap_color=heatmap_color,col_anno_var=cell_anno_var,col_anno_name=cell_anno_name,col_var_info=col_var_info,row_anno_var=snp_anno_var,row_anno_name=snp_anno_name,row_var_info=row_var_info,densColor=NULL,h_title=h_title,plot_info=plotInfo,input_legend=showLegend)
     }

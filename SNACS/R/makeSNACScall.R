@@ -235,7 +235,7 @@ clusterCellsWithSNPdata=function(snacsObj,outputFormat=c("none","","pdf","png"),
     if (is.na(match("bestSNPs",snacsObj[["processLevels"]]))) stop("Run getBestSNPs() before clustering SNPs\n")
     if (is.na(match("imputed",snacsObj[["processLevels"]]))) stop("Run imputeMissingMutations() before clustering SNPs\n")
 
-    clustMethod=c("hclust","skmean")
+    clustMethod=c("skmean","hclust")
     clustMethod=clustMethod[1]
 
     pvSnpThres=NA
