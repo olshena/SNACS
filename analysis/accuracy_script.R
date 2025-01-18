@@ -14,6 +14,55 @@ library(SNACS)
 source("../analysis/functions.R")
 
 ## ------------------------------
+## For single sample experiments 1-4, extract raw data from hdf5 file.
+## Then create SNACSList objects
+
+hashColors <- c("indianred2","green3","dodgerblue3","magenta3")
+dirDataRaw <- "../data/data_sequenced/"
+dirData <- "../data/"
+
+for (exptName in paste0("SNACS",1:4)) {
+    cat("\n\n------------- ",exptName,"\n")
+    switch(exptName,
+        "SNACS1"={
+            fileName="GSM8066757.hdf5"
+            hashNames=c("TS.1","TS.2")
+        },
+        "SNACS2"={
+            fileName="GSM8066758.hdf5"
+            hashNames=c("TS.2","TS.3")
+        },
+        "SNACS3"={
+            fileName="GSM8066759.hdf5"
+            hashNames=c("TS.3","TS.4")
+        },
+        "SNACS4"={
+            fileName="GSM8066760.hdf5"
+            hashNames=c("TS.1","TS.4")
+        },
+        "SNACS5"={
+            fileName="GSM8066761.hdf5"
+            hashNames=c("TS.1","TS.2")
+        },
+        "SNACS6"={
+            fileName="GSM8066762.hdf5"
+            hashNames=c("TS.2","TS.3","TS.4")
+        },
+        "SNACS7"={
+            fileName="GSM8066763.hdf5"
+            hashNames=c("TS.1","TS.2","TS.3","TS.4")
+        }
+    )
+    h5toList=h5readForSNACS(file=paste0(dirDataRaw,fileName))
+    
+    snacsObj=SNACSList(mut=h5toList$mut,hashes=h5toList$hashes[hashNames,],exptName=exptName,hashColors=hashColors[match(hashNames,c("TS.1","TS.2","TS.3","TS.4"))],
+                          depthTotal=h5toList$depthTotal,depthAlt=h5toList$depthAlt,annCell=h5toList$annCell,annSNP=h5toList$annSNP)
+    rm(h5toList)
+    snacsObj$annSNP$desc=getSNPdesc(snacsObj$annSNP$desc)
+    save(snacsObj,file=paste0(dirData,"snacsObj_init_",exptName,"_unfilt.RData"))
+}
+
+## ------------------------------
 ## Impute single experiments
 
 dirData <- "../data/"
@@ -34,9 +83,7 @@ for (fId in 1:length(fileList)) {
 ####################################################################
 ## Run to generate initial annCell files for making truth calls
 
-#for (snacsExpt in c("SNACS5","SNACS6","SNACS7")) {
-for (snacsExpt in c("SNACS5","SNACS7")) {
-#for (snacsExpt in c("SNACS6")) {
+for (snacsExpt in c("SNACS5","SNACS6","SNACS7")) {
     dirData <- "../data/"
     for (numSNP in numSNPvec) {
         fName <- paste0("snacsObj_",snacsExpt,"_unfilt.RData")

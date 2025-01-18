@@ -79,25 +79,25 @@ for (numSNP in numSNPvec) {
     exptNameSuffix=paste0("_hashFiltNumSNP",numSNP)
     
     for (exptId in exptIdVec) {
-        dirData <- "../data/"
+        dirData="../data/"
         
-        fName <- paste0("snacsObj_init_SNACS",exptId,exptNameSuffix,".RData")
-        #fName <- paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.RData")
+        fName=paste0("snacsObj_init_SNACS",exptId,exptNameSuffix,".RData")
+        #fName=paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.RData")
         load(paste0(dirData,fName))
         snacsObj0=snacsObj
 
-        fName <- paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,".RData")
-        #fName <- paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.RData")
+        fName=paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,".RData")
+        #fName=paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.RData")
         load(paste0(dirData,fName))
         snacsObj1=snacsObj
         cat("\n\n----------------- ",snacsObj$exptName,"\n",sep="")
         
         dirData="../output/accuracy/snpPosPropMat/"
-        fName <- paste0("snpPosPropMat_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.txt")
+        fName=paste0("snpPosPropMat_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.txt")
         snpPosPropMat=read.table(paste0(dirData,fName),sep="\t",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
 
         dirData="../output/accuracy/annCell/"
-        fName <- paste0("annCell_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.txt")
+        fName=paste0("annCell_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.txt")
         annCell=read.table(paste0(dirData,fName),sep="\t",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
                 
         ## ------------------------------
@@ -109,7 +109,7 @@ for (numSNP in numSNPvec) {
         
         snacsObj=snacsObj0
         snacsObj$exptName=paste0(snacsObj$exptName,"_allCell")
-        snacsObj <- imputeMissingMutForAllCells(snacsObj=snacsObj)
+        snacsObj=imputeMissingMutForAllCells(snacsObj=snacsObj)
         snacsObj$mut[,j0]=snacsObj1$mut[,j1]
         print(table(c(snacsObj$mut[,j0])==c(snacsObj1$mut[,j1]),exclude=NULL)) ## All TRUE
         print(table(c(snacsObj$mut),exclude=NULL)) ## No NA
@@ -144,7 +144,7 @@ for (numSNP in numSNPvec) {
         }
         
         dirOutThis=paste0(dirOutput,"annCell/")
-        fName <- paste0("_",snacsObj$exptName,"_SNACS",exptId,"snp")
+        fName=paste0("_",snacsObj$exptName,"_SNACS",exptId,"snp")
         if (!file.exists(dirOutThis)) dir.create(file.path(dirOutThis))
         write.table(annCell,file=paste0(dirOutput,"annCell/annCell",fName,".txt"),col.names=T,row.names=F, sep="\t",quote=F)
     }
@@ -160,20 +160,20 @@ for (numSNP in numSNPvec) {
     exptNameSuffix=paste0("_hashFiltNumSNP",numSNP)
     exptNameSuffixNew=paste0("_hashFiltNumSNP",numSNP,"_allCell")
     for (exptId in exptIdVec) {
-        dirData <- "../data/"
-        fName <- paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,".RData")
+        dirData="../data/"
+        fName=paste0("snacsObj_withDoubletD_SNACS",exptId,exptNameSuffix,".RData")
         load(paste0(dirData,fName))
         cat("\n\n----------------- ",snacsObj$exptName,"\n",sep="")
 
         patInfoAll=data.frame(patTruth=c("multiplet","ambiguous",paste0("Sample.",1:nrow(snacsObj$annHash))),hash=c("Multiplet","Ambiguous",snacsObj$annHash$hashNames),pat=c("Multiplet","Ambiguous",sub("Patient ","pat",snacsObj$annHash$patient)))
 
         dirData="../output/accuracy/"
-        fName <- paste0("annCell_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.txt")
+        fName=paste0("annCell_SNACS",exptId,exptNameSuffix,"_SNACS",exptId,"snp.txt")
         annCell1=read.table(paste0(dirData,"annCell/",fName),sep="\t",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
 
-        fName <- paste0("annCell_SNACS",exptId,exptNameSuffixNew,"_SNACS",exptId,"snp.txt")
+        fName=paste0("annCell_SNACS",exptId,exptNameSuffixNew,"_SNACS",exptId,"snp.txt")
         annCell=read.table(paste0(dirOutput,"annCell/",fName),sep="\t",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
-        fName <- paste0("trueHashCall_SNACS",exptId,exptNameSuffixNew,"_SNACS",exptId,"snp.txt")
+        fName=paste0("trueHashCall_SNACS",exptId,exptNameSuffixNew,"_SNACS",exptId,"snp.txt")
         hashCall_truth=read.table(paste0(dirOutput,"trueHashCall/",fName),sep="\t",h=T,quote="",comment.char="",as.is=T,fill=T,nrow=-1)
         
         annCell1=annCell
@@ -192,7 +192,7 @@ for (numSNP in numSNPvec) {
             print(table(snacs=annCell1$hashCall_truth[j],allCell=annCell2$hashCall_truth[j],exclude=NULL))
         }
         
-        fName <- paste0("annCell_SNACS",exptId,exptNameSuffixNew,"_SNACS",exptId,"snp.txt")
+        fName=paste0("annCell_SNACS",exptId,exptNameSuffixNew,"_SNACS",exptId,"snp.txt")
         if (!file.exists(dirOutThis)) dir.create(file.path(dirOutThis))
         write.table(annCell,file=paste0(dirOutput,"annCell/",fName),col.names=T,row.names=F, sep="\t",quote=F)
     }

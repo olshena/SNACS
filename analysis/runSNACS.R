@@ -1,5 +1,5 @@
 ## SNACS_Manuscript
-## Run SNACS
+## Run SNACS on the core multi-sample experiments (Experiments 5-7) described in section 3.1 of the manuscript
 
 ####################################################################
 ####################################################################
@@ -25,7 +25,7 @@ hashColors <- c("indianred2","green3","dodgerblue3","magenta3")
 dirDataRaw <- "../data/data_sequenced/"
 dirData <- "../data/"
 
-for (exptName in paste0("SNACS",1:7)) {
+for (exptName in paste0("SNACS",5:7)) {
     cat("\n\n------------- ",exptName,"\n")
     switch(exptName,
         "SNACS1"={

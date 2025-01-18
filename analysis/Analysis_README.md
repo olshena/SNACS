@@ -8,39 +8,14 @@ First we load SNACS and any dependencies.
 ```{r}
 library(SNACS)
 library(heatmap4)
-library(rhdf5)
 ```
 SNACS can be initiated directly from the .hdf5 file that outputs from the open-source alignment and cell calling pipline utilized in this manuscript. Alternatively, if FASTQ files from multiplexed SC DNAseq experiments are aligned using a different pipeline (e.g. Mission Bio Tapestri), genotype, hash antibody signal, total depth, and alternate depth matrices will needto be extracted and then inputted into the SNACSList function.  
 
 ```{r}
-file_path <- "SNACS5.genotypes.hdf5" # This .hdf5 file is deposited in GEO and available for public use. 
+fileName <- "SNACS5.genotypes.hdf5" # This .hdf5 file is deposited in GEO and available for public use. 
 
-barcodes <- h5read(file_path, "/CELL_BARCODES")
-variants <- h5read(file_path, "/VARIANTS")
-genotypes <- h5read(file_path, "/GT")
-hashes <- h5read(file_path, "/ABS/clr")
-hashnames <- h5read(file_path, "/AB_DESCRIPTIONS")
-totaldepth <- h5read(file_path, "/DP")
-altdepth <- h5read(file_path, "/AD")
+h5toList <- h5readForSNACS(file=paste0("../data/",fileName))
 
-mutMat <- matrix(as.numeric(genotypes), nrow = nrow(genotypes), ncol = ncol(genotypes))
-rownames(mutMat) <- variants
-colnames(mutMat) <- barcodes
-mutMat[mutMat == 3] <- NA
-
-colnames(hashes) <- barcodes
-rownames(hashes) <- hashnames
-hashMat <- hashes
-hashMat <- hashMat[1:2, ]
-rownames(hashMat) <- c('TS.1', 'TS.2')
-
-depthTotal <- matrix(as.numeric(totaldepth), nrow = nrow(totaldepth), ncol = ncol(totaldepth))
-rownames(depthTotal) <- variants
-colnames(depthTotal) <- barcodes
-
-depthAlt <- matrix(as.numeric(altdepth), nrow = nrow(altdepth), ncol = ncol(altdepth))
-rownames(depthAlt) <- variants
-colnames(depthAlt) <- barcodes
 ```
 
 Next, we create a SNACSlist object. A SNACSlist object is a simple list-based object that SNACS uses to store data. In addition to creating the SNACSlist object, the **SNACSList function** confirms the input data is in the correct format. The SNACSList object outputs the name of the experiment, the total number of SNPs, the total number of cells, and the number of hashes.
@@ -49,8 +24,8 @@ Next, we create a SNACSlist object. A SNACSlist object is a simple list-based ob
 exptName <- "Experiment5"
 hashColors <- c("red", "blue")
 
-snacsObj <- SNACSList(mut=mutMat,hashes=hashMat,exptName=exptName,hashColors=hashColors,
-                      depthTotal=depthTotal,depthAlt=depthAlt)
+snacsObj <- SNACSList(mut=h5toList$mut,hashes=h5toList$hashes[hashNames,],exptName=exptName,hashColors=hashColors,
+                          depthTotal=h5toList$depthTotal,depthAlt=h5toList$depthAlt,annCell=h5toList$annCell,annSNP=h5toList$annSNP)
 snacsObj
 
 An object of class "SNACSList"
