@@ -16,7 +16,7 @@
 #' @param cellProportionAboveBackgnd Numeric. Proportion of cells in a cluster that have to have signal above the background of a hash, determined by "backgndThreshold" parameter, for the cluster to be assigned to the hash. Default is 0.5. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
-#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is 0.5
+#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA
 #' @param bgndQuantileThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param bgndQuantileThresRnd2 Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param minClustSize Numeric. Minimum number of cells required to be in a cluster. Default is 2
@@ -30,7 +30,7 @@
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=0.4,proportionMutatedPerSNP=c(0.05,0.95),proportionMutatedPerCell=c(0,1),numSNP=3,maxProportionMultiplet=0.3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),maxClustSizeRnd2=100,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
+runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=0.4,proportionMutatedPerSNP=c(0.05,0.95),proportionMutatedPerCell=c(0,1),numSNP=3,maxProportionMultiplet=0.3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionAboveBackgnd=0.5,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=NA,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,minClustSize=2,clustComparePValue=10^-5,maxClustSampleSize=Inf,clustCompareMethod=c("t","hotelling"),maxClustSizeRnd2=100,dataTypeRnd2=c("euclidean","sum of squares","log2 euclidean","log2 sum of squares"),cbsAlpha=0.1,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
     bgndThresDetMethod=bgndThresDetMethod[1]
     clustCompareMethod=clustCompareMethod[1]
     dataTypeRnd2=dataTypeRnd2[1]
@@ -123,14 +123,14 @@ runSNACS=function(snacsObj,proportionMissingPerSNP=0.4,proportionMissingPerCell=
 #' @param backgndThresRnd2 Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of SNACS calls. Default is 0.75. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
-#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is 0.5
+#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA
 #' @param bgndQuantileThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param bgndQuantileThresRnd2 Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param outputFormat Character. Output file type. "none" means nothing is plotted. Default is "" which outputs to the standard output
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @return A SNACSList object
 #' @export
-getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
+getBestSNPs=function(snacsObj,numSNP=3,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=NA,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,outputFormat=c("","pdf","png","none"),verbose=FALSE) {
     
     bgndThresDetMethod=bgndThresDetMethod[1]
     
@@ -713,12 +713,12 @@ makeSnacsCall=function(snacsObj,minSampleSize=100,cellProportionAboveBackgnd=0.5
 #' @param backgndThresRnd2 Numeric. Threshold of the background antibody distribution of a hash above which the antibody will be considered to be expressed in a cell for making second round of SNACS calls. Default is 0.75. Range is 0-1
 #' @param cellProportionBelowBackgndMode Numeric. Maximum proportion of cells which can be below the mode of the estimated hash background distribution. Default is 0.6. Range is 0-1
 #' @param cellProportionForModeDetection Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1
-#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is 0.5
+#' @param hashThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA
 #' @param bgndQuantileThreshold Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param bgndQuantileThresRnd2 Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in second round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"
 #' @param verbose Logical. Prints information when running the method. Default is FALSE
 #' @export
-clusterSampleWithAntibodyData=function(snacsObj,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=0.5,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,verbose=FALSE) {
+clusterSampleWithAntibodyData=function(snacsObj,minSampleSize=100,bgndThresDetMethod=c("automatic","manual","default modes","two modes"),backgndThreshold=0.95,backgndThresRnd2=0.75,cellProportionBelowBackgndMode=0.6,cellProportionForModeDetection=0.75,hashThreshold=NA,bgndQuantileThreshold=NA,bgndQuantileThresRnd2=NA,verbose=FALSE) {
     bgndThresDetMethod=bgndThresDetMethod[1]
     
     
