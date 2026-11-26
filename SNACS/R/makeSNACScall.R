@@ -323,13 +323,16 @@ clusterCellsWithSNPdata=function(snacsObj,outputFormat=c("none","","pdf","png"),
         snacsObj$depthAlt=snacsObj$depthAlt[i,]
     }
 
-    j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
-    datThis=datThis[,j]
-    hashesThis=hashesThis[,j]
-    annCellThis=annCellThis[j,]
-    if (!is.null(snacsObj$depthTotal)) {
-        snacsObj$depthTotal=snacsObj$depthTotal[,j]
-        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    if (F) {
+        ## Exclude cells with no or all mutations
+        j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
+        datThis=datThis[,j]
+        hashesThis=hashesThis[,j]
+        annCellThis=annCellThis[j,]
+        if (!is.null(snacsObj$depthTotal)) {
+            snacsObj$depthTotal=snacsObj$depthTotal[,j]
+            snacsObj$depthAlt=snacsObj$depthAlt[,j]
+        }
     }
 
     if (clustMethod=="skmean") {
@@ -375,13 +378,16 @@ clusterCellsWithSNPdata=function(snacsObj,outputFormat=c("none","","pdf","png"),
     }
     
     ################################################
-    j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1) ## Exclude cells with no or all mutations
-    datThis=datThis[,j]
-    hashesThis=hashesThis[,j]
-    annCellThis=annCellThis[j,]
-    if (!is.null(snacsObj$depthTotal)) {
-        snacsObj$depthTotal=snacsObj$depthTotal[,j]
-        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    if (F) {
+        ## Exclude cells with no or all mutations
+        j=apply(datThis,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
+        datThis=datThis[,j]
+        hashesThis=hashesThis[,j]
+        annCellThis=annCellThis[j,]
+        if (!is.null(snacsObj$depthTotal)) {
+            snacsObj$depthTotal=snacsObj$depthTotal[,j]
+            snacsObj$depthAlt=snacsObj$depthAlt[,j]
+        }
     }
 
     ################################################

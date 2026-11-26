@@ -301,17 +301,19 @@ imputeMissingMutations=function(snacsObj,verbose=FALSE) {
     snacsObj[["missing"]]=missMat
     snacsObj[["processLevels"]]=c(snacsObj[["processLevels"]],"imputed")
     
-    ## Exclude cells with no or all mutations after imputation
-    j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
-    if (length(j)<10) {
-        stop(paste0("Most or all cells with no or all mutations after imputation"))
-    }
-    snacsObj$mut=snacsObj$mut[,j]
-    snacsObj$hashes=snacsObj$hashes[,j]
-    snacsObj$annCell=snacsObj$annCell[j,]
-    if (!is.null(snacsObj$depthTotal)) {
-        snacsObj$depthTotal=snacsObj$depthTotal[,j]
-        snacsObj$depthAlt=snacsObj$depthAlt[,j]
+    if (F) {
+        ## Exclude cells with no or all mutations after imputation
+        j=apply(snacsObj$mut,2,function(x) {mean(x==1)}); j=which(j>0 & j<1)
+        if (length(j)<10) {
+            stop(paste0("Most or all cells with no or all mutations after imputation"))
+        }
+        snacsObj$mut=snacsObj$mut[,j]
+        snacsObj$hashes=snacsObj$hashes[,j]
+        snacsObj$annCell=snacsObj$annCell[j,]
+        if (!is.null(snacsObj$depthTotal)) {
+            snacsObj$depthTotal=snacsObj$depthTotal[,j]
+            snacsObj$depthAlt=snacsObj$depthAlt[,j]
+        }
     }
 
     if (verbose) {
