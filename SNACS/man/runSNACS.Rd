@@ -19,7 +19,7 @@ runSNACS(
   cellProportionAboveBackgnd = 0.5,
   cellProportionBelowBackgndMode = 0.6,
   cellProportionForModeDetection = 0.75,
-  hashThreshold = 0.5,
+  hashThreshold = NA,
   bgndQuantileThreshold = NA,
   bgndQuantileThresRnd2 = NA,
   minClustSize = 2,
@@ -63,7 +63,7 @@ runSNACS(
 
 \item{cellProportionForModeDetection}{Numeric. Proportion of cells used to estimate mode of the background distribution. Used only if "cellProportionBelowBackgndMode" threshold is not met; otherwise, all cells are used. Default is 0.75. Range is 0-1}
 
-\item{hashThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is 0.5}
+\item{hashThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell. If NA then backgndThreshold is used. Default is NA}
 
 \item{bgndQuantileThreshold}{Numeric. Threshold of the hash value above which the antibody will be considered to be expressed in a cell in first round of SNACS call. Default is NA. Used if bgndThresDetMethod = "manual"}
 
